@@ -10,7 +10,7 @@ public class Generator(IStringWriter writer) : IGenerator
     public async Task GenerateAsync(
         string outputPath,
         long fileSize,
-        int? degreeOfParallelism = null,
+        int? degreeOfParallelism = default,
         CancellationToken cancellationToken = default)
     {
         using var file = MemoryMappedFile.CreateFromFile(
@@ -32,7 +32,7 @@ public class Generator(IStringWriter writer) : IGenerator
             var positionInView = 0L;
             var newPositionInView = 0L;
 
-            var buffer = new char[Constants.BufferLengthForLine];
+            var buffer = new char[Constants.LineBufferSize];
             var bufferPosition = 0;
 
             while (positionInView < accessor.Capacity)
