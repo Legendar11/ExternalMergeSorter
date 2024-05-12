@@ -2,7 +2,7 @@
 
 public static class Constants
 {
-    public static int DefaultDegreeOfParallelism => Environment.ProcessorCount - 1;
+    public static int DefaultDegreeOfParallelism => (Environment.ProcessorCount / 2) + 1;
 
     public const long BufferLengthForLine = 1_000_000L;
 
