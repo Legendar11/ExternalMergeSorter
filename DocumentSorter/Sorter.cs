@@ -1,22 +1,18 @@
 ﻿using DocumentSorter.Configuration;
-using System;
-using System.Collections.Generic;
 using System.IO.MemoryMappedFiles;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DocumentSorter;
 
 public class Sorter(DocumentSorterOptions options)
 {
     const string InputFileMapNamePrefix = "input_";
+    const string ChunkFileMapNamePrefix = "chunk_";
 
     public async Task Sort(string inputFilename, CancellationToken cancellationToken = default)
     {
-        var fileLength = new FileInfo(inputFilename).Length;
-
         var fileChunks = GenerateFileChunks(inputFilename, options.InitialChunkFileSize, options.Delimeter);
+
+        var fileNames = SeparateFileByChunks(inputFilename, fileChunks);
     }
 
 
@@ -39,7 +35,7 @@ public class Sorter(DocumentSorterOptions options)
 
         while (currentFileIndex < (filesCount - 1))
         {
-            endPosition += fileLength / filesCount;
+            endPosition += fileLength / filesCount; // check is round
 
             positionInFile = endPosition;
 
@@ -49,7 +45,7 @@ public class Sorter(DocumentSorterOptions options)
                 accessor.ReadArray(positionInFile, buffer, 0, buffer.Length);
                 positionInFile += 1;
 
-                if ((positionInFile + 4) >= accessor.Capacity)
+                if ((positionInFile + 4) >= accessor.Capacity) //
                 {
                     throw new Exception();
                 }
@@ -61,11 +57,63 @@ public class Sorter(DocumentSorterOptions options)
             fileChunks[currentFileIndex] = new FileChunk(currentFileIndex, startPosition, endPosition);
 
             currentFileIndex++;
-            startPosition = endPosition + newLine.Length * 2;
+            startPosition = endPosition + newLine.Length * sizeof(char);
         }
 
         fileChunks[currentFileIndex] = new FileChunk(currentFileIndex, startPosition, fileLength);
 
         return fileChunks;
+    }
+
+    private IReadOnlyCollection<string> SeparateFileByChunks(string filePath, IReadOnlyCollection<FileChunk> fileChunks, int? parallellism = default)
+    {
+        var fileLength = new FileInfo(filePath).Length;
+        var fileNames = new string[fileChunks.Count];
+
+        parallellism ??= Constants.DefaultDegreeOfParallelism;
+
+        using var file = MemoryMappedFile.CreateFromFile(filePath, FileMode.Open, $"{InputFileMapNamePrefix}_{filePath}");
+
+        Parallel.ForEach(fileChunks, new ParallelOptions { MaxDegreeOfParallelism = parallellism.Value }, fileChunk =>
+        {
+            using var accessor = file.CreateViewAccessor(0, fileLength);
+
+            var fileCapacity = fileChunk.End - fileChunk.Start;
+
+            fileNames[fileChunk.Index] = $"data_{fileChunk.Index}.unsorted";
+
+            using var chunkFile = MemoryMappedFile.CreateFromFile(
+                fileNames[fileChunk.Index],
+                FileMode.Create,
+                $"{ChunkFileMapNamePrefix}_{filePath}",
+                fileCapacity);
+            using var chunkAccessor = chunkFile.CreateViewAccessor(0, fileCapacity);
+
+            var buffer = new char[Constants.CopyBufferSize];
+            var readedBytes = 0;
+            var position = fileChunk.Start;
+            var miniPosition = 0;
+            var leftCapacity = 0;
+
+            do
+            {
+                readedBytes = accessor.ReadArray(position, buffer, 0, buffer.Length);
+
+                leftCapacity = (int)(fileCapacity - miniPosition) / sizeof(char);
+
+                if (leftCapacity < readedBytes)
+                {
+                    chunkAccessor.WriteArray(miniPosition, buffer, 0, leftCapacity);
+                    break;
+                }
+
+                chunkAccessor.WriteArray(miniPosition, buffer, 0, readedBytes);
+
+                position += readedBytes;
+                miniPosition += readedBytes;
+            } while (readedBytes > 0);
+        });
+
+        return fileNames;
     }
 }
