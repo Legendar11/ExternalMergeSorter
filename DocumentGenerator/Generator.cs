@@ -1,4 +1,5 @@
-﻿using DocumentGenerator.Extensions;
+﻿using DocumentGenerator.Configuration;
+using DocumentGenerator.Extensions;
 using System.IO.MemoryMappedFiles;
 using System.Text;
 
@@ -8,28 +9,20 @@ public class Generator(IStringWriter writer) : IGenerator
 {
     private const string NewFileMapNamePrefix = "generated_";
 
-    public async Task GenerateAsync(
-        string outputPath,
-        long fileSize,
-        Encoding? encoding = default,
-        int? degreeOfParallelism = default,
-        CancellationToken cancellationToken = default)
+    public async Task GenerateAsync(Options options, CancellationToken cancellationToken = default)
     {
         using var file = MemoryMappedFile.CreateFromFile(
-                outputPath,
+                options.OutputPath,
                 FileMode.Create,
-                $"{NewFileMapNamePrefix}_{outputPath}",
-                fileSize);
+                $"{NewFileMapNamePrefix}_{options.OutputPath}",
+                options.FileSize);
 
-        degreeOfParallelism ??= CalcluateDegreeOfParallelism(fileSize);
-        encoding ??= Encoding.Default;
+        var sizeOfSymbolInBytes = options.Encoding.GetByteCount("0");
 
-        var sizeOfSymbolInBytes = encoding.GetByteCount("0");
+        var accessors = CreateFileAccessors(file, options.FileSize, sizeOfSymbolInBytes, options.DegreeOfParallelism);
 
-        var accessors = CreateFileAccessors(file, fileSize, degreeOfParallelism.Value);
-
-        var options = new ParallelOptions { MaxDegreeOfParallelism = degreeOfParallelism.Value, CancellationToken = cancellationToken };
-        await Parallel.ForEachAsync(accessors, options, (accessor, ct) =>
+        var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = options.DegreeOfParallelism, CancellationToken = cancellationToken };
+        await Parallel.ForEachAsync(accessors, parallelOptions, (accessor, ct) =>
         {
             var positionInView = 0L;
             var newPositionInView = 0L;
@@ -47,7 +40,7 @@ public class Generator(IStringWriter writer) : IGenerator
 
                 writer.WriteLine(buffer, ref bufferPosition);
 
-                encodedBytesCount = encoding.GetBytes(buffer, 0, bufferPosition, bufferBytes, bufferBytesPosition);
+                encodedBytesCount = options.Encoding.GetBytes(buffer, 0, bufferPosition, bufferBytes, bufferBytesPosition);
 
                 var isWritten = accessor.TryWriteByteArray(positionInView, bufferBytes, 0, encodedBytesCount, out newPositionInView);
                 if (isWritten)
@@ -81,11 +74,12 @@ public class Generator(IStringWriter writer) : IGenerator
                 bufferPosition = 0;
                 writer.WriteRandomSymbols(remainingSymbolsToWrite, buffer, ref bufferPosition);
 
+                // append a new line
                 writer.WriteNewLine(buffer, ref bufferPosition);
                 remainingSymbolsToWrite += writer.Options.NewLine.Length;
 
                 // add extra symbols to the last line of an accessor
-                encodedBytesCount = encoding.GetBytes(buffer, 0, remainingSymbolsToWrite, bufferBytes, bufferBytesPosition);
+                encodedBytesCount = options.Encoding.GetBytes(buffer, 0, remainingSymbolsToWrite, bufferBytes, bufferBytesPosition);
                 accessor.WriteArray(positionInView, bufferBytes, 0, encodedBytesCount);
             }
 
@@ -98,19 +92,13 @@ public class Generator(IStringWriter writer) : IGenerator
         }
     }
 
-    private static int CalcluateDegreeOfParallelism(long fileSize) => fileSize switch
-    {
-        <= (1024 * 1024) => 1, // 1 MB
-        _ => Constants.DefaultDegreeOfParallelism
-    };
-
-    private static MemoryMappedViewAccessor[] CreateFileAccessors(MemoryMappedFile file, long fileSize, int count)
+    private static MemoryMappedViewAccessor[] CreateFileAccessors(MemoryMappedFile file, long fileSize, int sizeOfSymbolInBytes, int count)
     {
         var viewSize = fileSize / count;
 
-        if (viewSize % sizeof(char) != 0)
+        if (viewSize % sizeOfSymbolInBytes != 0)
         {
-            viewSize++;
+            viewSize += viewSize % sizeOfSymbolInBytes;
         }
 
         var accessors = new MemoryMappedViewAccessor[count];

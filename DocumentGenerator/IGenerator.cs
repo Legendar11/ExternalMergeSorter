@@ -1,13 +1,8 @@
-﻿using System.Text;
+﻿using DocumentGenerator.Configuration;
 
 namespace DocumentGenerator;
 
 public interface IGenerator
 {
-    Task GenerateAsync(
-            string outputPath,
-            long fileSize,
-            Encoding? encoding = default,
-            int? degreeOfParallelism = default,
-            CancellationToken cancellationToken = default);
+    Task GenerateAsync(Options options, CancellationToken cancellationToken = default);
 }

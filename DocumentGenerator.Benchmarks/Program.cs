@@ -1,9 +1,7 @@
-﻿// See https://aka.ms/new-console-template for more information
-using BenchmarkDotNet.Attributes;
+﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using DocumentGenerator;
 using DocumentGenerator.Configuration;
-using System.Text;
 
 BenchmarkRunner.Run<DocumentGeneratorBenchmaks>();
 
@@ -48,6 +46,11 @@ public class DocumentGeneratorBenchmaks
             _ => throw new ArgumentException()
         };
 
-        await documentGenerator.GenerateAsync(OutputPath, fileSize, Encoding.Default, parallelism, default);
+        await documentGenerator.GenerateAsync(new Options
+        {
+            FileSize = fileSize,
+            DegreeOfParallelism = parallelism,
+            OutputPath = OutputPath
+        });
     }
 }
