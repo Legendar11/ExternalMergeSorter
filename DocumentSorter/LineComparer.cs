@@ -1,74 +1,74 @@
-﻿using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Concurrent;
 
 namespace DocumentSorter;
 
 internal class LineComparer(char[] Delimeter) : IComparer<string>
 {
-    private readonly ConcurrentDictionary<int, int> dict = new();
+    private readonly ConcurrentDictionary<int, int> dict = new(8, 1_000_000);
 
     public int Compare(string? a, string? b)
     {
-        if (a == null || b == null)
-        {
-            throw new ArgumentNullException();
-        }
-
-        var indexA = a.IndexOf(Delimeter[0]);
-        var indexB = b.IndexOf(Delimeter[0]);
+        var indexA = a!.IndexOf(Delimeter[0]);
+        var indexB = b!.IndexOf(Delimeter[0]);
 
         var hash = CustomHashCodeForChars(a, indexA, a.Length, b, indexB, b.Length);
+        var isCached = dict.TryGetValue(hash, out var cached);
 
-        if (dict.TryGetValue(hash, out var cached) && cached != 0)
+        if (isCached && cached != 0)
         {
             return cached;
         }
 
-        int i = indexA + Delimeter.Length, j = indexB + Delimeter.Length;
-        int compared = 0;
+        int i, j;
+        int compared;
 
-        do
+        if (!isCached)
         {
-            compared = a[i].CompareTo(b[j]);
+            i = indexA + Delimeter.Length;
+            j = indexB + Delimeter.Length;
+            compared = 0;
 
-            i++;
-            j++;
+            do
+            {
+                compared = a[i].CompareTo(b[j]);
 
-            if (compared != 0)
-            {
-                dict.TryAdd(hash, compared);
-                return compared;
-            }
+                i++;
+                j++;
 
-            if (i == a.Length)
-            {
-                if (j != b.Length)
+                if (compared != 0)
                 {
-                    dict.TryAdd(hash, -1);
-                    return -1;
+                    dict.TryAdd(hash, compared);
+                    return compared;
                 }
-                else
+
+                if (i == a.Length)
                 {
-                    break;
+                    if (j != b.Length)
+                    {
+                        dict.TryAdd(hash, -1);
+                        return -1;
+                    }
+                    else
+                    {
+                        dict.TryAdd(hash, 0);
+                        break;
+                    }
                 }
-            }
-            else if (j == b.Length)
-            {
-                if (i != a.Length)
+                else if (j == b.Length)
                 {
-                    dict.TryAdd(hash, 1);
-                    return 1;
+                    if (i != a.Length)
+                    {
+                        dict.TryAdd(hash, 1);
+                        return 1;
+                    }
+                    else
+                    {
+                        dict.TryAdd(hash, 0);
+                        break;
+                    }
                 }
-                else
-                {
-                    break;
-                }
-            }
-        } while (true);
+            } while (true);
+        }
 
         if (indexA > indexB)
         {
@@ -105,10 +105,18 @@ internal class LineComparer(char[] Delimeter) : IComparer<string>
             }
             for (var i = startB; i < endB; i++)
             {
-                result = result * 314159 + b[i];
+                result = result * 37 + b[i];
             }
 
             return result;
         }
     }
 }
+
+//internal class RowComparer(IComparer<string> comparer) : IComparer<(string? Value, int Index)>
+//{
+//    public int Compare((string? Value, int Index) x, (string? Value, int Index) y)
+//    {
+//        return comparer.Compare(x.Value, y.Value);
+//    }
+//}

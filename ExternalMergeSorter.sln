@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocumentGenerator.Benchmark
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocumentSorter", "DocumentSorter\DocumentSorter.csproj", "{3DC9CAE6-256E-46A8-AE6C-48B72DA05A1E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocumentSorter.Benchmarks", "DocumentSorter.Benchmarks\DocumentSorter.Benchmarks.csproj", "{B302C975-6990-49A8-8FC5-2EE89A2BE545}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{3DC9CAE6-256E-46A8-AE6C-48B72DA05A1E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3DC9CAE6-256E-46A8-AE6C-48B72DA05A1E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3DC9CAE6-256E-46A8-AE6C-48B72DA05A1E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B302C975-6990-49A8-8FC5-2EE89A2BE545}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B302C975-6990-49A8-8FC5-2EE89A2BE545}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B302C975-6990-49A8-8FC5-2EE89A2BE545}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B302C975-6990-49A8-8FC5-2EE89A2BE545}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -22,13 +22,10 @@ public class Generator(IStringWriter writer) : IGenerator
         degreeOfParallelism ??= CalcluateDegreeOfParallelism(fileSize);
 
         var accessors = CreateFileAccessors(file, fileSize, degreeOfParallelism.Value);
-        var indexedAccessors = accessors.Select((accessor, i) => (Accessor: accessor, Index: i));
 
-        await Parallel.ForEachAsync(indexedAccessors, cancellationToken, (indexedAccessor, ct) =>
+        var options = new ParallelOptions { MaxDegreeOfParallelism = degreeOfParallelism.Value, CancellationToken = cancellationToken };
+        await Parallel.ForEachAsync(accessors, options, (accessor, ct) =>
         {
-            var accessor = indexedAccessor.Accessor;
-            var isLastAccessor = indexedAccessor.Index == (accessors.Length - 1);
-
             var positionInView = 0L;
             var newPositionInView = 0L;
 
@@ -57,11 +54,8 @@ public class Generator(IStringWriter writer) : IGenerator
 
             if (positionInView == 0)
             {
-                if (!isLastAccessor)
-                {
-                    bufferPosition -= writer.Options.NewLine.Length;
-                    writer.WriteNewLine(buffer, ref bufferPosition);
-                }
+                bufferPosition -= writer.Options.NewLine.Length;
+                writer.WriteNewLine(buffer, ref bufferPosition);
 
                 // write as many symbols as fitted into available space
                 accessor.WriteArray(positionInView, buffer, 0, remainingSymbolsToWrite);
@@ -72,21 +66,12 @@ public class Generator(IStringWriter writer) : IGenerator
                 // we need to return to previous line
                 positionInView -= writer.Options.NewLine.Length * sizeof(char);
 
-                // in case last line of the file - we don't need to add new line, so we can use spare symbols
-                if (isLastAccessor)
-                {
-                    remainingSymbolsToWrite += writer.Options.NewLine.Length;
-                    bufferPosition = 0;
-                }
-
                 // add extra symbols to fullfill the available space
+                bufferPosition = 0;
                 writer.WriteRandomSymbols(remainingSymbolsToWrite, buffer, ref bufferPosition);
 
-                if (!isLastAccessor)
-                {
-                    writer.WriteNewLine(buffer, ref bufferPosition);
-                    remainingSymbolsToWrite += writer.Options.NewLine.Length;
-                }
+                writer.WriteNewLine(buffer, ref bufferPosition);
+                remainingSymbolsToWrite += writer.Options.NewLine.Length;
 
                 // add extra symbols to the last line of an accessor
                 accessor.WriteArray(positionInView, buffer, 0, remainingSymbolsToWrite);
