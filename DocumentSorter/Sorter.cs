@@ -1,5 +1,6 @@
 ﻿using DocumentSorter.Configuration;
 using System.IO.MemoryMappedFiles;
+using System.Text;
 
 namespace DocumentSorter;
 
@@ -8,13 +9,36 @@ public class Sorter(DocumentSorterOptions options)
     const string InputFileMapNamePrefix = "input_";
     const string ChunkFileMapNamePrefix = "chunk_";
 
-    public async Task Sort(string inputFilename, CancellationToken cancellationToken = default)
+    public async Task SortAsync(string inputFilename, int? degreeOfParallelism = null, CancellationToken cancellationToken = default)
     {
-        var fileChunks = GenerateFileChunks(inputFilename, options.InitialChunkFileSize, options.Delimeter);
+        degreeOfParallelism ??= Constants.DefaultDegreeOfParallelism;
 
-        var fileNames = SeparateFileByChunks(inputFilename, fileChunks);
+        var fileChunks = GenerateFileChunks(inputFilename, options.InitialChunkFileSize, options.NewLine);
+
+        var fileNames = await SeparateFileByChunks(inputFilename, fileChunks, degreeOfParallelism.Value);
+
+        var comparer = new LineComparer(options.Delimeter);
+        await SortInitialChunkFilesAsync(fileNames, comparer, degreeOfParallelism.Value, cancellationToken);
     }
 
+    private async Task SortInitialChunkFilesAsync(
+        IReadOnlyCollection<string> fileNames,
+        IComparer<string> comparer,
+        int parallellism,
+        CancellationToken cancellationToken)
+    {
+        var options = new ParallelOptions { MaxDegreeOfParallelism = parallellism, CancellationToken = cancellationToken };
+
+        await Parallel.ForEachAsync(fileNames, options, async (fileName, ct) =>
+        {
+            var array = await File.ReadAllLinesAsync(fileName, Encoding.Unicode, ct);
+
+            Array.Sort(array, comparer);
+
+            await File.WriteAllLinesAsync(fileName, array, Encoding.Unicode, ct);
+            File.Move(fileName, Path.ChangeExtension(fileName, "sorted"), true);
+        });
+    }
 
     private static IReadOnlyCollection<FileChunk> GenerateFileChunks(string filePath, long chunkSize, char[] newLine)
     {
@@ -65,16 +89,14 @@ public class Sorter(DocumentSorterOptions options)
         return fileChunks;
     }
 
-    private IReadOnlyCollection<string> SeparateFileByChunks(string filePath, IReadOnlyCollection<FileChunk> fileChunks, int? parallellism = default)
+    private async Task<IReadOnlyCollection<string>> SeparateFileByChunks(string filePath, IReadOnlyCollection<FileChunk> fileChunks, int parallellism)
     {
         var fileLength = new FileInfo(filePath).Length;
         var fileNames = new string[fileChunks.Count];
 
-        parallellism ??= Constants.DefaultDegreeOfParallelism;
-
         using var file = MemoryMappedFile.CreateFromFile(filePath, FileMode.Open, $"{InputFileMapNamePrefix}_{filePath}");
 
-        Parallel.ForEach(fileChunks, new ParallelOptions { MaxDegreeOfParallelism = parallellism.Value }, fileChunk =>
+        Parallel.ForEach(fileChunks, new ParallelOptions { MaxDegreeOfParallelism = parallellism }, (fileChunk) =>
         {
             using var accessor = file.CreateViewAccessor(0, fileLength);
 
@@ -85,7 +107,7 @@ public class Sorter(DocumentSorterOptions options)
             using var chunkFile = MemoryMappedFile.CreateFromFile(
                 fileNames[fileChunk.Index],
                 FileMode.Create,
-                $"{ChunkFileMapNamePrefix}_{filePath}",
+                $"{ChunkFileMapNamePrefix}_{fileNames[fileChunk.Index]}",
                 fileCapacity);
             using var chunkAccessor = chunkFile.CreateViewAccessor(0, fileCapacity);
 

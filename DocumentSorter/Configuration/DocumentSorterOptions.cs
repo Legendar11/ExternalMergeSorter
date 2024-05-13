@@ -6,5 +6,7 @@ public class DocumentSorterOptions
 
     public char[] Delimeter { get; init; } = ". ".ToCharArray();
 
+    public char[] NewLine { get; init; } = "\r\n".ToCharArray();
+
     public int DegreeOfParallelism { get; init; }
 }
