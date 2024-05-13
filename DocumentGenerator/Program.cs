@@ -7,7 +7,7 @@ IStringWriter writer = new DocumentGenerator.StringWriter(new StringWriterOption
 IGenerator documentGenerator = new Generator(writer);
 
 var stopwatch = Stopwatch.StartNew();
-await documentGenerator.GenerateAsync("data.txt", 1024 * 1024 * 1024);
+await documentGenerator.GenerateAsync("data.txt", 1024 * 1024);
 stopwatch.Stop();
 
 Console.WriteLine($"File is generated! Elapesed milliseconds: {stopwatch.ElapsedMilliseconds}");

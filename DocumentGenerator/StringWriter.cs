@@ -32,6 +32,11 @@ public class StringWriter(StringWriterOptions options) : IStringWriter
         {
             digit = number % 10;
 
+            if (position == startPosition && digit == 0)
+            {
+                digit = random.Next(1, 10);
+            }
+
             buffer[position] = numbers[digit];
             position++;
 
