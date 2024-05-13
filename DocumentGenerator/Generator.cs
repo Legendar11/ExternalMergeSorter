@@ -1,5 +1,6 @@
 ﻿using DocumentGenerator.Extensions;
 using System.IO.MemoryMappedFiles;
+using System.Text;
 
 namespace DocumentGenerator;
 
@@ -10,6 +11,7 @@ public class Generator(IStringWriter writer) : IGenerator
     public async Task GenerateAsync(
         string outputPath,
         long fileSize,
+        Encoding? encoding = default,
         int? degreeOfParallelism = default,
         CancellationToken cancellationToken = default)
     {
@@ -20,6 +22,9 @@ public class Generator(IStringWriter writer) : IGenerator
                 fileSize);
 
         degreeOfParallelism ??= CalcluateDegreeOfParallelism(fileSize);
+        encoding ??= Encoding.Default;
+
+        var sizeOfSymbolInBytes = encoding.GetByteCount("0");
 
         var accessors = CreateFileAccessors(file, fileSize, degreeOfParallelism.Value);
 
@@ -32,13 +37,19 @@ public class Generator(IStringWriter writer) : IGenerator
             var buffer = new char[Constants.LineBufferSize];
             var bufferPosition = 0;
 
+            var bufferBytes = new byte[Constants.LineBufferSize];
+            var bufferBytesPosition = 0;
+            var encodedBytesCount = 0;
+
             while (positionInView < accessor.Capacity)
             {
                 ct.ThrowIfCancellationRequested();
 
                 writer.WriteLine(buffer, ref bufferPosition);
 
-                var isWritten = accessor.TryWriteCharArray(positionInView, buffer, 0, bufferPosition, out newPositionInView);
+                encodedBytesCount = encoding.GetBytes(buffer, 0, bufferPosition, bufferBytes, bufferBytesPosition);
+
+                var isWritten = accessor.TryWriteByteArray(positionInView, bufferBytes, 0, encodedBytesCount, out newPositionInView);
                 if (isWritten)
                 {
                     positionInView = newPositionInView;
@@ -50,7 +61,7 @@ public class Generator(IStringWriter writer) : IGenerator
                 }
             }
 
-            var remainingSymbolsToWrite = (int)(accessor.Capacity - positionInView) / sizeof(char);
+            var remainingSymbolsToWrite = (int)(accessor.Capacity - positionInView) / sizeOfSymbolInBytes;
 
             if (positionInView == 0)
             {
@@ -64,7 +75,7 @@ public class Generator(IStringWriter writer) : IGenerator
             {
                 // because we didn't write the last line - 
                 // we need to return to previous line
-                positionInView -= writer.Options.NewLine.Length * sizeof(char);
+                positionInView -= writer.Options.NewLine.Length * sizeOfSymbolInBytes;
 
                 // add extra symbols to fullfill the available space
                 bufferPosition = 0;
@@ -74,7 +85,8 @@ public class Generator(IStringWriter writer) : IGenerator
                 remainingSymbolsToWrite += writer.Options.NewLine.Length;
 
                 // add extra symbols to the last line of an accessor
-                accessor.WriteArray(positionInView, buffer, 0, remainingSymbolsToWrite);
+                encodedBytesCount = encoding.GetBytes(buffer, 0, remainingSymbolsToWrite, bufferBytes, bufferBytesPosition);
+                accessor.WriteArray(positionInView, bufferBytes, 0, encodedBytesCount);
             }
 
             return new ValueTask();

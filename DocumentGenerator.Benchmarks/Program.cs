@@ -3,29 +3,23 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using DocumentGenerator;
 using DocumentGenerator.Configuration;
-using static BenchmarkDotNet.Attributes.MarkdownExporterAttribute;
+using System.Text;
 
 BenchmarkRunner.Run<DocumentGeneratorBenchmaks>();
 
 [MemoryDiagnoser]
-[Orderer(BenchmarkDotNet.Order.SummaryOrderPolicy.SlowestToFastest)]
+[Orderer(BenchmarkDotNet.Order.SummaryOrderPolicy.FastestToSlowest)]
 public class DocumentGeneratorBenchmaks
 {
     private IGenerator documentGenerator = null!;
 
     private const string OutputPath = "data_benchmark_temp.txt";
 
-    private const long OneKb = 1024;
+    [Params("1 Kb", "1 Mb", "1 Gb", "10 Gb")]
+    public string FileSize { get; set; } = null!;
 
-    private const long OneMb = OneKb * OneKb;
-
-    private const long OneGb = OneKb * OneKb * OneKb;
-
-    [Params(OneKb, OneMb, OneGb, OneGb * 10)]
-    public long FileSize { get; set; }
-
-    [Params(default, 1, 2, 4, 8)]
-    public int? DegreeOfParallelism { get; set; }
+    [Params("1", "4", "8", "Max")]
+    public string DegreeOfParallelism { get; set; } = null!;
 
     [GlobalSetup]
     public void Setup()
@@ -37,6 +31,23 @@ public class DocumentGeneratorBenchmaks
     [Benchmark]
     public async Task Generate_Document()
     {
-        await documentGenerator.GenerateAsync(OutputPath, FileSize, DegreeOfParallelism);
+        var fileSize = FileSize switch
+        {
+            "1 Kb" => 1024,
+            "1 Mb" => 1024 * 1024,
+            "1 Gb" => 1024 * 1024 * 1024,
+            "10 Gb" => 1024 * 1024 * 1024 * 10L,
+            _ => throw new ArgumentException()
+        };
+        var parallelism = DegreeOfParallelism switch
+        {
+            "1" => 1,
+            "4" => 4,
+            "8" => 8,
+            "Max" => default,
+            _ => throw new ArgumentException()
+        };
+
+        await documentGenerator.GenerateAsync(OutputPath, fileSize, Encoding.Default, parallelism, default);
     }
 }

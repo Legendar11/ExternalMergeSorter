@@ -4,10 +4,11 @@ using DocumentSorter;
 using System.Diagnostics;
 using DocumentGenerator.Configuration;
 using DocumentGenerator;
+using System.Text;
 
 IStringWriter writer = new DocumentGenerator.StringWriter(new StringWriterOptions());
 IGenerator documentGenerator = new Generator(writer);
-await documentGenerator.GenerateAsync("data.txt", 1024 * 1024 * 1024);
+//await documentGenerator.GenerateAsync("data.txt", 1024 * 1024 * 1024);
 
 var sorter = new Sorter(new DocumentSorterOptions());
 

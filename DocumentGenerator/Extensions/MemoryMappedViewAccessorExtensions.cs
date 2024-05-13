@@ -4,10 +4,9 @@ namespace DocumentGenerator.Extensions;
 
 internal static class MemoryMappedViewAccessorExtensions
 {
-    public static bool TryWriteCharArray(this MemoryMappedViewAccessor accessor, long position, char[] array, int offset, int count, out long newPosition)
+    public static bool TryWriteByteArray(this MemoryMappedViewAccessor accessor, long position, byte[] array, int offset, int count, out long newPosition)
     {
-        var bytesToWrite = count * sizeof(char);
-        newPosition = position + bytesToWrite;
+        newPosition = position + count;
 
         if (newPosition > accessor.Capacity)
         {
