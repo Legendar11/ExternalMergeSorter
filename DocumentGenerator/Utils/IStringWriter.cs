@@ -4,11 +4,9 @@ namespace DocumentGenerator.Utils;
 
 public interface IStringWriter
 {
-    StringWriterConfiguration Options { get; }
+    void WriteNumber(int number, char[] buffer, ref int position);
 
-    int WriteLine(int generateFrom, int generateTo, char[] buffer, ref int bufferPosition);
+    void WriteSymbols(char[] phrase, char[] buffer, ref int position);
 
-    int WriteRandomSymbols(int length, char[] buffer, ref int position);
-
-    int WriteNewLine(char[] buffer, ref int position);
+    void WriteRandomSymbols(int length, char[] buffer, ref int position);
 }

@@ -24,8 +24,8 @@ Console.WriteLine($"\t{nameof(SortOptions.FileSizeToGenerate)}: {options.Value.F
 
 if (options.Value.FileSizeToGenerate != null)
 {
-    IStringWriter writer = new StringWriter(new StringWriterConfiguration());
-    IGenerator documentGenerator = new Generator(writer);
+    IStringWriter writer = new StringWriter();
+    IGenerator documentGenerator = new Generator(new DocumentGeneratorConfiguration(),writer);
     await documentGenerator.GenerateAsync(new GenerateOptions
     {
         OutputFilename = options.Value.InputFileName,

@@ -1,16 +1,11 @@
-﻿using DocumentGenerator.Configuration;
+﻿namespace DocumentGenerator.Utils;
 
-namespace DocumentGenerator.Utils;
-
-public class StringWriter(StringWriterConfiguration options) : IStringWriter
+public class StringWriter : IStringWriter
 {
     private static readonly Random random = new();
 
-    public StringWriterConfiguration Options => options;
-
-    public int WriteLine(int generateFrom, int generateTo, char[] buffer, ref int position)
+    public void WriteNumber(int number, char[] buffer, ref int position)
     {
-        var number = random.Next(generateFrom, generateTo);
         var startPosition = position;
 
         if (number == 0)
@@ -42,51 +37,25 @@ public class StringWriter(StringWriterConfiguration options) : IStringWriter
 
             number /= 10;
         }
+    }
 
-        for (var i = 0; i < options.Delimeter.Length; i++)
-        {
-            buffer[position] = options.Delimeter[i];
-            position++;
-        }
-
-        var phrase = Constants.Phrases[random.Next(Constants.Phrases.Length)];
+    public void WriteSymbols(char[] phrase, char[] buffer, ref int position)
+    {
         for (var i = 0; i < phrase.Length; i++)
         {
             buffer[position] = phrase[i];
             position++;
         }
-
-        for (var i = 0; i < options.NewLine.Length; i++)
-        {
-            buffer[position] = options.NewLine[i];
-            position++;
-        }
-
-        return position;
     }
 
-    public int WriteRandomSymbols(int length, char[] buffer, ref int position)
+    public void WriteRandomSymbols(int length, char[] buffer, ref int position)
     {
         for (var i = 0; i < length; i++)
         {
             buffer[position] = chars[random.Next(chars.Length)];
             position++;
         }
-
-        return length;
     }
-
-    public int WriteNewLine(char[] buffer, ref int position)
-    {
-        for (var i = 0; i < options.NewLine.Length; i++)
-        {
-            buffer[position] = options.NewLine[i];
-            position++;
-        }
-
-        return options.NewLine.Length;
-    }
-
 
     private static readonly char[] chars =
         "abcdefghijklmnopqrstuvwxyz".ToCharArray();

@@ -23,8 +23,8 @@ public class DocumentGeneratorBenchmaks
     [GlobalSetup]
     public void Setup()
     {
-        IStringWriter writer = new DocumentGenerator.Utils.StringWriter(new StringWriterConfiguration());
-        documentGenerator = new Generator(writer);
+        IStringWriter writer = new DocumentGenerator.Utils.StringWriter();
+        documentGenerator = new Generator(new DocumentGeneratorConfiguration(), writer);
     }
 
     [Benchmark]

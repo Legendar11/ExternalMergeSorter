@@ -18,8 +18,8 @@ public class GeneratorTests
 
     public GeneratorTests()
     {
-        writer = new Utils.StringWriter(new StringWriterConfiguration());
-        generator = new Generator(writer);
+        writer = new Utils.StringWriter();
+        generator = new Generator(new DocumentGeneratorConfiguration(), writer);
 
         if (Directory.Exists(TempDirectory))
         {

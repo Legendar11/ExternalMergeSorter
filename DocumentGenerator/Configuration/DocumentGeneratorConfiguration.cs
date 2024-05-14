@@ -1,6 +1,6 @@
 ﻿namespace DocumentGenerator.Configuration;
 
-public class StringWriterConfiguration
+public class DocumentGeneratorConfiguration
 {
     public char[] Delimeter { get; init; } = ". ".ToCharArray();
 

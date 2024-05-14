@@ -5,8 +5,10 @@ using System.IO.MemoryMappedFiles;
 
 namespace DocumentGenerator;
 
-public class Generator(IStringWriter writer) : IGenerator
+public class Generator(DocumentGeneratorConfiguration configuration, IStringWriter writer) : IGenerator
 {
+    private static Random random = new();
+
     public async Task GenerateAsync(GenerateOptions options, CancellationToken cancellationToken = default)
     {
         options.DegreeOfParallelism = options.FileSize > (1024 * 1024)
@@ -47,15 +49,22 @@ public class Generator(IStringWriter writer) : IGenerator
             var bufferBytesPosition = 0;
             var encodedBytesCount = 0;
 
+            int randomNumber = 0;
+            char[] randomPhrase;
+
             while (positionInView < accessor.Capacity)
             {
                 ct.ThrowIfCancellationRequested();
 
-                writer.WriteLine(
-                    options.GenerateFrom,
-                    options.GenerateTo,
-                    buffer,
-                    ref bufferPosition);
+                randomNumber = random.Next(options.GenerateFrom, options.GenerateTo);
+                writer.WriteNumber(randomNumber, buffer, ref bufferPosition);
+
+                writer.WriteSymbols(configuration.Delimeter, buffer, ref bufferPosition);
+
+                randomPhrase = Constants.Phrases[random.Next(Constants.Phrases.Length)];
+                writer.WriteSymbols(randomPhrase, buffer, ref bufferPosition);
+
+                writer.WriteSymbols(configuration.NewLine, buffer, ref bufferPosition);
 
                 encodedBytesCount = options.Encoding.GetBytes(
                     buffer,
@@ -86,8 +95,8 @@ public class Generator(IStringWriter writer) : IGenerator
 
             if (positionInView == 0)
             {
-                bufferPosition -= writer.Options.NewLine.Length;
-                writer.WriteNewLine(buffer, ref bufferPosition);
+                bufferPosition -= configuration.NewLine.Length;
+                writer.WriteSymbols(configuration.NewLine, buffer, ref bufferPosition);
 
                 // write as many symbols as fitted into available space
                 accessor.WriteArray(positionInView, buffer, 0, remainingSymbolsToWrite);
@@ -96,15 +105,15 @@ public class Generator(IStringWriter writer) : IGenerator
             {
                 // because we didn't write the last line - 
                 // we need to return to previous line
-                positionInView -= writer.Options.NewLine.Length * sizeOfSymbolInBytes;
+                positionInView -= configuration.NewLine.Length * sizeOfSymbolInBytes;
 
                 // add extra symbols to fullfill the available space
                 bufferPosition = 0;
                 writer.WriteRandomSymbols(remainingSymbolsToWrite, buffer, ref bufferPosition);
 
                 // append a new line
-                writer.WriteNewLine(buffer, ref bufferPosition);
-                remainingSymbolsToWrite += writer.Options.NewLine.Length;
+                writer.WriteSymbols(configuration.NewLine, buffer, ref bufferPosition);
+                remainingSymbolsToWrite += configuration.NewLine.Length;
 
                 // add extra symbols to the last line of an accessor
                 encodedBytesCount = options.Encoding.GetBytes(

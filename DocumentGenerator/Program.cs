@@ -31,8 +31,8 @@ Console.WriteLine($"\t{nameof(GenerateOptions.Encoding)}: {options.Value.Encodin
 Console.WriteLine($"\t{nameof(GenerateOptions.GenerateFrom)}: {options.Value.GenerateFrom}");
 Console.WriteLine($"\t{nameof(GenerateOptions.GenerateTo)}: {options.Value.GenerateTo}");
 
-IStringWriter writer = new StringWriter(new StringWriterConfiguration());
-IGenerator documentGenerator = new Generator(writer);
+IStringWriter writer = new StringWriter();
+IGenerator documentGenerator = new Generator(new DocumentGeneratorConfiguration(), writer);
 
 var stopwatch = Stopwatch.StartNew();
 await documentGenerator.GenerateAsync(options.Value);

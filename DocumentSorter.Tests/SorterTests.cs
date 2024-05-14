@@ -21,8 +21,8 @@ namespace DocumentSorter.Tests
 
         public SorterTests()
         {
-            writer = new DocumentGenerator.Utils.StringWriter(new StringWriterConfiguration());
-            generator = new Generator(writer);
+            writer = new DocumentGenerator.Utils.StringWriter();
+            generator = new Generator(new DocumentGeneratorConfiguration(),writer);
 
             if (Directory.Exists(TempDirectory))
             {
