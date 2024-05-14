@@ -3,13 +3,15 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.9.34728.123
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocumentGenerator", "DocumentGenerator\DocumentGenerator.csproj", "{15455F8D-03A9-43DE-98CC-F7892EF78886}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DocumentGenerator", "DocumentGenerator\DocumentGenerator.csproj", "{15455F8D-03A9-43DE-98CC-F7892EF78886}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocumentGenerator.Benchmarks", "DocumentGenerator.Benchmarks\DocumentGenerator.Benchmarks.csproj", "{628E8BF6-F2F2-4C0B-AB1B-259C05CE9C1A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DocumentGenerator.Benchmarks", "DocumentGenerator.Benchmarks\DocumentGenerator.Benchmarks.csproj", "{628E8BF6-F2F2-4C0B-AB1B-259C05CE9C1A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocumentSorter", "DocumentSorter\DocumentSorter.csproj", "{3DC9CAE6-256E-46A8-AE6C-48B72DA05A1E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DocumentSorter", "DocumentSorter\DocumentSorter.csproj", "{3DC9CAE6-256E-46A8-AE6C-48B72DA05A1E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocumentSorter.Benchmarks", "DocumentSorter.Benchmarks\DocumentSorter.Benchmarks.csproj", "{B302C975-6990-49A8-8FC5-2EE89A2BE545}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DocumentSorter.Benchmarks", "DocumentSorter.Benchmarks\DocumentSorter.Benchmarks.csproj", "{B302C975-6990-49A8-8FC5-2EE89A2BE545}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DocumentGenerator.Tests", "DocumentGenerator.Tests\DocumentGenerator.Tests.csproj", "{88F04CC3-FE73-4CE7-83AB-D94F2511EB37}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -33,6 +35,10 @@ Global
 		{B302C975-6990-49A8-8FC5-2EE89A2BE545}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B302C975-6990-49A8-8FC5-2EE89A2BE545}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B302C975-6990-49A8-8FC5-2EE89A2BE545}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88F04CC3-FE73-4CE7-83AB-D94F2511EB37}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88F04CC3-FE73-4CE7-83AB-D94F2511EB37}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88F04CC3-FE73-4CE7-83AB-D94F2511EB37}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88F04CC3-FE73-4CE7-83AB-D94F2511EB37}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
