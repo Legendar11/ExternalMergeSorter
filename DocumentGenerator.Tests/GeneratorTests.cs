@@ -11,7 +11,7 @@ public class GeneratorTests
     private readonly IStringWriter writer;
     private readonly IGenerator generator;
 
-    private const string TempDirectory = "tmp";
+    private const string TempDirectory = "tests_tmp_generate";
     private string tempDirectoryPath;
 
     private string GenerateFilename() => Path.Combine(tempDirectoryPath, Guid.NewGuid().ToString());

@@ -204,11 +204,10 @@ public class Sorter(DocumentSorterConfiguration configuration) : ISorter
         var positionInFile = 0L;
         var buffer = new byte[newLineBytesCount];
 
-        const string InputFileMapNamePrefix = "input_";
         using var file = MemoryMappedFile.CreateFromFile(
             filePath,
             FileMode.Open,
-            $"{InputFileMapNamePrefix}_{filePath}");
+            null);
         using var accessor = file.CreateViewAccessor(0, fileLength);
 
         while (currentFileIndex < (filesCount - 1))
@@ -258,8 +257,7 @@ public class Sorter(DocumentSorterConfiguration configuration) : ISorter
 
         var tempDirectoryPath = Directory.CreateDirectory(Constants.TempDirectoryForChunkFiles).FullName;
 
-        const string InputFileMapNamePrefix = "input_";
-        using var file = MemoryMappedFile.CreateFromFile(filePath, FileMode.Open, $"{InputFileMapNamePrefix}_{filePath}");
+        using var file = MemoryMappedFile.CreateFromFile(filePath, FileMode.Open, null);
 
         Parallel.ForEach(fileChunks, parallelOptions, (fileChunk) =>
         {
@@ -267,12 +265,16 @@ public class Sorter(DocumentSorterConfiguration configuration) : ISorter
 
             var fileCapacity = fileChunk.End - fileChunk.Start;
 
-            fileNames[fileChunk.Index] = Path.Combine(tempDirectoryPath, $"data_{fileChunk.Index}.{Constants.FileUnsortedExtension}");
+            fileNames[fileChunk.Index] = Path.Combine(
+                tempDirectoryPath,
+                $"data_{fileChunk.Index}.{Constants.FileUnsortedExtension}");
+
+            File.Create(fileNames[fileChunk.Index]).Close();
 
             const string ChunkFileMapNamePrefix = "chunk_";
             using var chunkFile = MemoryMappedFile.CreateFromFile(
                    fileNames[fileChunk.Index],
-                   FileMode.Create,
+                   FileMode.Open,
                    $"{ChunkFileMapNamePrefix}_{fileChunk.Index}",
                    fileCapacity);
             using var chunkAccessor = chunkFile.CreateViewAccessor(0, fileCapacity);
