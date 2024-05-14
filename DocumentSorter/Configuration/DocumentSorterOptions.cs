@@ -7,4 +7,6 @@ public class DocumentSorterOptions
     public char[] Delimeter { get; init; } = ". ".ToCharArray();
 
     public char[] NewLine { get; init; } = "\r\n".ToCharArray();
+
+    public int DictionaryHashCapacity { get; init; } = 1024 * 1024 * 10;
 }

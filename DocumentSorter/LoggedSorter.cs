@@ -46,15 +46,27 @@ internal class LoggedSorter(DocumentSorterOptions options) : Sorter(options)
         Console.WriteLine($"Chunk files created for: {stopwatch.Elapsed.TotalSeconds}");
     }
 
-    protected override void MergeSortedFilesIntoOne(IReadOnlyCollection<string> sortedFiles, string outputFilename, Encoding encoding, IComparer<string> comparer, int parallellism, CancellationToken cancellationToken)
+    protected override void MergeSortedFilesIntoOne(
+        IReadOnlyCollection<string> sortedFiles,
+        string outputFilename,
+        Encoding encoding,
+        IComparer<string> comparer,
+        int parallellism,
+        int filesPerMerge,
+        CancellationToken cancellationToken)
     {
         stopwatch.Restart();
-        base.MergeSortedFilesIntoOne(sortedFiles, outputFilename, encoding, comparer, parallellism, cancellationToken);
+        base.MergeSortedFilesIntoOne(sortedFiles, outputFilename, encoding, comparer, parallellism, filesPerMerge, cancellationToken);
         stopwatch.Stop();
         Console.WriteLine($"General merge process completed for: {stopwatch.Elapsed.TotalSeconds}");
     }
 
-    protected override void MergeFileChunk(IReadOnlyCollection<string> filesToMerge, string outputFileName, Encoding encoding, IComparer<string> comparer, CancellationToken cancellationToken)
+    protected override void MergeFileChunk(
+        IReadOnlyCollection<string> filesToMerge,
+        string outputFileName,
+        Encoding encoding,
+        IComparer<string> comparer,
+        CancellationToken cancellationToken)
     {
         stopwatch.Restart();
         base.MergeFileChunk(filesToMerge, outputFileName, encoding, comparer, cancellationToken);

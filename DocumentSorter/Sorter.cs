@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.IO.MemoryMappedFiles;
 using System.Text;
 
-
 namespace DocumentSorter;
 
 public class Row
@@ -15,33 +14,46 @@ public class Row
     public int StreamReader;
 }
 
-public class Sorter(DocumentSorterOptions options)
+public class Sorter(DocumentSorterOptions configuration) : ISorter
 {
-    public async Task SortAsync(
-        string inputFilename,
-        string outputFilename,
-        Encoding? encoding = default,
-        int? degreeOfParallelism = default,
-        CancellationToken cancellationToken = default)
+    public async Task SortAsync(SortOptions options, CancellationToken cancellationToken = default)
     {
-        var stopWatch = new Stopwatch();
+        var fileChunks = GenerateFileChunks(
+            options.InputFileName,
+            options.Encoding,
+            configuration.InitialChunkFileSize,
+            configuration.NewLine);
 
-        degreeOfParallelism ??= Constants.DefaultDegreeOfParallelism;
-        encoding ??= Encoding.Default;
+        var fileNames = SeparateFileByChunks(
+            options.InputFileName,
+            options.Encoding,
+            fileChunks,
+            options.DegreeOfParallelism);
 
-        var fileChunks = GenerateFileChunks(inputFilename, encoding, options.InitialChunkFileSize, options.NewLine);
+        var dictHash = new ConcurrentDictionary<int, int>(options.DegreeOfParallelism, configuration.DictionaryHashCapacity);
+        var comparer = new LineComparer(configuration.Delimeter, dictHash);
 
-        var fileNames = SeparateFileByChunks(inputFilename, encoding, fileChunks, degreeOfParallelism.Value);
+        await SortInitialChunkFilesAsync(
+            fileNames,
+            options.Encoding,
+            comparer,
+            options.DegreeOfParallelism,
+            cancellationToken);
 
-        var dictHash = new ConcurrentDictionary<int, int>(degreeOfParallelism.Value, Constants.DictionaryHashCapacity);
-        var comparer = new LineComparer(options.Delimeter, dictHash);
+        fileNames = fileNames
+            .Select(file => file.Replace(Constants.FileUnsortedExtension, Constants.FileSortedExtension))
+            .ToArray();
 
-        await SortInitialChunkFilesAsync(fileNames, encoding, comparer, degreeOfParallelism.Value, cancellationToken);
-        fileNames = fileNames.Select(file => file.Replace(Constants.FileUnsortedExtension, Constants.FileSortedExtension)).ToArray();
+        MergeSortedFilesIntoOne(
+            fileNames,
+            options.OutputFilename,
+            options.Encoding,
+            comparer,
+            options.DegreeOfParallelism,
+            options.FilesPerMerge,
+            cancellationToken);
 
-        MergeSortedFilesIntoOne(fileNames, outputFilename, encoding, comparer, degreeOfParallelism.Value, cancellationToken);
-
-        Directory.Delete(Constants.TempDirectoryForChunkFiles, true);
+        Directory.Delete(Constants.TempDirectoryForChunkFiles, recursive: true);
     }
 
     protected virtual void MergeSortedFilesIntoOne(
@@ -50,6 +62,7 @@ public class Sorter(DocumentSorterOptions options)
         Encoding encoding,
         IComparer<string> comparer,
         int parallellism,
+        int filesPerMerge,
         CancellationToken cancellationToken)
     {
         var iteraiton = 0;
@@ -58,10 +71,10 @@ public class Sorter(DocumentSorterOptions options)
         var filesForSort = sortedFiles.ToArray();
         var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = parallellism, CancellationToken = cancellationToken };
 
-        while (filesForSort.Length > Constants.FilesPerMerge)
+        while (filesForSort.Length > filesPerMerge)
         {
             var fileChunks = filesForSort
-                .Chunk(Constants.FilesPerMerge)
+                .Chunk(filesPerMerge)
                 .Select((files, index) =>
                 (
                     Files: files,
@@ -205,7 +218,10 @@ public class Sorter(DocumentSorterOptions options)
         var buffer = new byte[newLineBytesCount];
 
         const string InputFileMapNamePrefix = "input_";
-        using var file = MemoryMappedFile.CreateFromFile(filePath, FileMode.Open, $"{InputFileMapNamePrefix}_{filePath}");
+        using var file = MemoryMappedFile.CreateFromFile(
+            filePath,
+            FileMode.Open,
+            $"{InputFileMapNamePrefix}_{filePath}");
         using var accessor = file.CreateViewAccessor(0, fileLength);
 
         while (currentFileIndex < (filesCount - 1))
