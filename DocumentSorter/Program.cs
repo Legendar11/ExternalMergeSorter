@@ -44,6 +44,6 @@ else if (!File.Exists(options.Value.InputFileName))
 ISorter sorter = new Sorter(new DocumentSorterConfiguration());
 
 var stopwatch = Stopwatch.StartNew();
-await sorter.SortAsync(options.Value);
+sorter.Sort(options.Value);
 stopwatch.Stop();
 Console.WriteLine($"File is sorted! Elapesed seconds: {stopwatch.Elapsed.TotalSeconds}");

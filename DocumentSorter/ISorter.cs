@@ -4,5 +4,5 @@ namespace DocumentSorter;
 
 public interface ISorter
 {
-    Task SortAsync(SortOptions options, CancellationToken cancellationToken = default);
+    void Sort(SortOptions options, CancellationToken cancellationToken = default);
 }

@@ -35,7 +35,7 @@ internal class LoggedSorter(DocumentSorterConfiguration options) : Sorter(option
         return result;
     }
 
-    protected override async Task SortInitialChunkFilesAsync(
+    protected override void SortInitialChunkFiles(
         IReadOnlyCollection<string> fileNames,
         Encoding encoding,
         IComparer<string> comparer,
@@ -43,7 +43,7 @@ internal class LoggedSorter(DocumentSorterConfiguration options) : Sorter(option
         CancellationToken cancellationToken)
     {
         stopwatch.Restart();
-        await base.SortInitialChunkFilesAsync(fileNames, encoding, comparer, parallellism, cancellationToken);
+        base.SortInitialChunkFiles(fileNames, encoding, comparer, parallellism, cancellationToken);
         stopwatch.Stop();
         Console.WriteLine($"Files sorted for: {stopwatch.Elapsed.TotalSeconds}");
     }

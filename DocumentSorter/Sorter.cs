@@ -10,7 +10,7 @@ namespace DocumentSorter;
 
 public class Sorter(DocumentSorterConfiguration configuration) : ISorter
 {
-    public async Task SortAsync(SortOptions options, CancellationToken cancellationToken = default)
+    public void Sort(SortOptions options, CancellationToken cancellationToken = default)
     {
         var fileChunks = GenerateFileChunks(
             options.InputFileName,
@@ -27,7 +27,7 @@ public class Sorter(DocumentSorterConfiguration configuration) : ISorter
         var dictHash = new ConcurrentDictionary<int, int>(options.DegreeOfParallelism, configuration.DictionaryHashCapacity);
         var comparer = new LineComparer(configuration.Delimeter, dictHash);
 
-        await SortInitialChunkFilesAsync(
+        SortInitialChunkFiles(
             fileNames,
             options.Encoding,
             comparer,
@@ -67,6 +67,8 @@ public class Sorter(DocumentSorterConfiguration configuration) : ISorter
 
         while (filesForSort.Length > filesPerMerge)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var fileChunks = filesForSort
                 .Chunk(filesPerMerge)
                 .Select((files, index) =>
@@ -161,7 +163,7 @@ public class Sorter(DocumentSorterConfiguration configuration) : ISorter
         File.Delete(temporaryFilename);
     }
 
-    protected virtual async Task SortInitialChunkFilesAsync(
+    protected virtual void SortInitialChunkFiles(
         IReadOnlyCollection<string> fileNames,
         Encoding encoding,
         IComparer<string> comparer,
@@ -170,7 +172,7 @@ public class Sorter(DocumentSorterConfiguration configuration) : ISorter
     {
         var options = new ParallelOptions { MaxDegreeOfParallelism = parallellism, CancellationToken = cancellationToken };
 
-        await Parallel.ForEachAsync(fileNames, options, async (fileName, ct) =>
+        Parallel.ForEach(fileNames, options, fileName =>
         {
             cancellationToken.ThrowIfCancellationRequested();
 
