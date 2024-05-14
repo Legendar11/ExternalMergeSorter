@@ -51,7 +51,11 @@ public class Generator(IStringWriter writer) : IGenerator
             {
                 ct.ThrowIfCancellationRequested();
 
-                writer.WriteLine(buffer, ref bufferPosition);
+                writer.WriteLine(
+                    options.GenerateFrom,
+                    options.GenerateTo,
+                    buffer,
+                    ref bufferPosition);
 
                 encodedBytesCount = options.Encoding.GetBytes(
                     buffer,

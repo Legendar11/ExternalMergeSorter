@@ -81,10 +81,13 @@ namespace DocumentSorter.Tests
         }
 
         [TestMethod]
-        [DataRow(1024)]
-        [DataRow(1024 * 1024)]
-        [DataRow(1024 * 1024 * 10)]
-        public async Task Numbers_Are_Sorted_InCase_Phrases_Are_Same(long fileSize)
+        [DataRow(1024, 0, 100_000)]
+        [DataRow(1024 * 1024, 0, 100_000)]
+        [DataRow(1024 * 1024 * 10, 0, 100_000)]
+        [DataRow(1024, -100_000, 100_000)]
+        [DataRow(1024 * 1024, -100_000, 100_000)]
+        [DataRow(1024 * 1024 * 10, -100_000, 100_000)]
+        public async Task Numbers_Are_Sorted_InCase_Phrases_Are_Same(long fileSize, int from, int to)
         {
             var filenameInput = GenerateFilename();
             var filenameOutput = GenerateFilename();
@@ -92,7 +95,9 @@ namespace DocumentSorter.Tests
             await generator.GenerateAsync(new GenerateOptions
             {
                 FileSize = fileSize,
-                OutputFilename = filenameInput
+                OutputFilename = filenameInput,
+                GenerateFrom = from,
+                GenerateTo = to
             });
 
             sorter.Sort(new SortOptions

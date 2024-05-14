@@ -6,7 +6,7 @@ public interface IStringWriter
 {
     StringWriterConfiguration Options { get; }
 
-    int WriteLine(char[] buffer, ref int bufferPosition);
+    int WriteLine(int generateFrom, int generateTo, char[] buffer, ref int bufferPosition);
 
     int WriteRandomSymbols(int length, char[] buffer, ref int position);
 

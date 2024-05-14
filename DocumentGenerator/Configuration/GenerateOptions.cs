@@ -18,4 +18,10 @@ public class GenerateOptions
 
     [Option('p', "parallelism", Required = false, HelpText = "Set degree of parallelism")]
     public int DegreeOfParallelism { get; set; } = (Environment.ProcessorCount / 2) + (Environment.ProcessorCount / 4);
+
+    [Option('f', "from", Required = false, HelpText = "Set generated numbers lowest value (included)")]
+    public int GenerateFrom { get; init; } = -1_000_000;
+
+    [Option('t', "to", Required = false, HelpText = "Set generated numbers lowest value (not included)")]
+    public int GenerateTo { get; init; } = 1_000_000;
 }

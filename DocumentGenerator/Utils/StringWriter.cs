@@ -8,9 +8,9 @@ public class StringWriter(StringWriterConfiguration options) : IStringWriter
 
     public StringWriterConfiguration Options => options;
 
-    public int WriteLine(char[] buffer, ref int position)
+    public int WriteLine(int generateFrom, int generateTo, char[] buffer, ref int position)
     {
-        var number = random.Next(options.GenerateNumberFrom, options.GenerateNumberTo);
+        var number = random.Next(generateFrom, generateTo);
         var startPosition = position;
 
         if (number == 0)
@@ -41,7 +41,7 @@ public class StringWriter(StringWriterConfiguration options) : IStringWriter
             position++;
 
             number /= 10;
-        } // reverse array
+        }
 
         for (var i = 0; i < options.Delimeter.Length; i++)
         {

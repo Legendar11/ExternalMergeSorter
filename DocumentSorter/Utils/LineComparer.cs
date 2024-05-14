@@ -75,22 +75,34 @@ internal class LineComparer(char[] Delimeter, ConcurrentDictionary<int, int> Dic
             } while (true);
         }
 
-        if (indexA > indexB)
+        int startPositionA = a[0] == '-' ? 1 : 0, 
+            startPositionB = b[0] == '-' ? 1 : 0;
+
+        if (startPositionA == 0 && startPositionB == 1)
         {
             return 1;
         }
-        else if (indexA < indexB)
+        else if (startPositionA == 1 && startPositionB == 0)
         {
             return -1;
         }
 
-        for (i = 0; i < indexA; i++)
+        if ((indexA - startPositionA) > (indexB - startPositionB))
+        {
+            return startPositionA != 0 ? -1 : 1;
+        }
+        else if ((indexA - startPositionA) < (indexB - startPositionB))
+        {
+            return startPositionA != 0 ? 1 : -1;
+        }
+
+        for (i = startPositionA; i < indexA; i++)
         {
             compared = a[i].CompareTo(b[i]);
 
             if (compared != 0)
             {
-                return compared;
+                return startPositionA != 0 ? -compared : compared;
             }
         }
 

@@ -25,7 +25,7 @@ public class DocumentSorterBenchmaks
     }
 
     [Benchmark]
-    public async Task Sort_Document()
+    public void Sort_Document()
     {
         var sorter = new Sorter(new DocumentSorter.Configuration.DocumentSorterConfiguration());
 

@@ -143,7 +143,8 @@ public class Sorter(DocumentSorterConfiguration configuration) : ISorter
             }
 
             var value = streamReaders[currentStreamReaderIndex].ReadLine();
-            lines[0] = new LinkedLine { Value = value!, StreamReaderIndex = currentStreamReaderIndex };
+            lines[0].Value = value!;
+            lines[0].StreamReaderIndex = currentStreamReaderIndex;
 
             var i = 1;
             while (i < lines.Count && comparer.Compare(lines[i - 1].Value, lines[i].Value) > 0)
