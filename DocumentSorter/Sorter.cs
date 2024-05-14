@@ -271,11 +271,10 @@ public class Sorter(DocumentSorterConfiguration configuration) : ISorter
 
             File.Create(fileNames[fileChunk.Index]).Close();
 
-            const string ChunkFileMapNamePrefix = "chunk_";
             using var chunkFile = MemoryMappedFile.CreateFromFile(
                    fileNames[fileChunk.Index],
                    FileMode.Open,
-                   $"{ChunkFileMapNamePrefix}_{fileChunk.Index}",
+                   null,
                    fileCapacity);
             using var chunkAccessor = chunkFile.CreateViewAccessor(0, fileCapacity);
 
