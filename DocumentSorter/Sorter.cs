@@ -285,7 +285,7 @@ public class Sorter(DocumentSorterConfiguration configuration) : ISorter
             {
                 readedBytes = accessor.ReadArray(position, buffer, 0, buffer.Length);
 
-                leftCapacity = (int)(fileCapacity - miniPosition) / sizeOfSymbolInBytes;
+                leftCapacity = (int)(fileCapacity - miniPosition);
 
                 if (leftCapacity < readedBytes)
                 {

@@ -9,7 +9,13 @@ internal class LineComparer(char[] Delimeter, ConcurrentDictionary<int, int> Dic
         var indexA = a!.IndexOf(Delimeter[0]);
         var indexB = b!.IndexOf(Delimeter[0]);
 
-        var hash = CustomHashCodeForChars(a, indexA + Delimeter.Length, a.Length - Delimeter.Length, b, indexB + Delimeter.Length, b.Length - Delimeter.Length);
+        var hash = CustomHashCodeForChars(
+            a,
+            indexA + Delimeter.Length,
+            a.Length,
+            b,
+            indexB + Delimeter.Length,
+            b.Length);
         var isCached = DictHash.TryGetValue(hash, out var cached);
 
         if (isCached && cached != 0)

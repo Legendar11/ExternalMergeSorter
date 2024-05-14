@@ -20,7 +20,7 @@ Console.WriteLine($"\t{nameof(SortOptions.OutputFilename)}: {options.Value.Outpu
 Console.WriteLine($"\t{nameof(SortOptions.DegreeOfParallelism)}: {options.Value.DegreeOfParallelism}");
 Console.WriteLine($"\t{nameof(SortOptions.Encoding)}: {options.Value.Encoding.EncodingName}");
 Console.WriteLine($"\t{nameof(SortOptions.FilesPerMerge)}: {options.Value.FilesPerMerge}");
-Console.WriteLine($"\t{nameof(SortOptions.FileSizeToGenerate)}: {options.Value.FileSizeToGenerate.ToString() ?? "-"}");
+Console.WriteLine($"\t{nameof(SortOptions.FileSizeToGenerate)}: {options.Value.FileSizeToGenerate?.ToString() ?? "-"}");
 
 if (options.Value.FileSizeToGenerate != null)
 {
