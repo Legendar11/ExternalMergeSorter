@@ -63,7 +63,7 @@ public class Sorter(DocumentSorterConfiguration configuration) : ISorter
 
         var tmpDirectory = Path.GetDirectoryName(sortedFiles.First())!;
         var filesForSort = sortedFiles.ToArray();
-        var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = 1, CancellationToken = cancellationToken };
+        var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = parallellism, CancellationToken = cancellationToken };
 
         while (filesForSort.Length > filesPerMerge)
         {
