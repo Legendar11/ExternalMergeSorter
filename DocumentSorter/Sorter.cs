@@ -76,7 +76,7 @@ public class Sorter(DocumentSorterConfiguration configuration) : ISorter
                     Output: Path.Combine(tmpDirectory, $"data_{iteraiton}_{index}.{Constants.FileSortedExtension}")
                 ));
 
-            Parallel.ForEach(fileChunks, (fileChunk) =>
+            Parallel.ForEach(fileChunks, parallelOptions, (fileChunk) =>
             {
                 if (fileChunk.Files.Length == 1)
                 {
