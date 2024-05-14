@@ -18,6 +18,7 @@ internal class LoggedSorter(DocumentSorterConfiguration options) : Sorter(option
         stopwatch.Restart();
         var result = base.GenerateFileChunks(filePath, encoding, chunkSize, newLine);
         stopwatch.Stop();
+        Console.WriteLine($"Chunk sizes calculated for: {stopwatch.Elapsed.TotalSeconds}");
         return result;
     }
 
@@ -30,7 +31,7 @@ internal class LoggedSorter(DocumentSorterConfiguration options) : Sorter(option
         stopwatch.Restart();
         var result = base.SeparateFileByChunks(filePath, encoding, fileChunks, parallellism);
         stopwatch.Stop();
-        Console.WriteLine($"Files sorted for: {stopwatch.Elapsed.TotalSeconds}");
+        Console.WriteLine($"Chunk files created for: {stopwatch.Elapsed.TotalSeconds}");
         return result;
     }
 
@@ -44,7 +45,7 @@ internal class LoggedSorter(DocumentSorterConfiguration options) : Sorter(option
         stopwatch.Restart();
         await base.SortInitialChunkFilesAsync(fileNames, encoding, comparer, parallellism, cancellationToken);
         stopwatch.Stop();
-        Console.WriteLine($"Chunk files created for: {stopwatch.Elapsed.TotalSeconds}");
+        Console.WriteLine($"Files sorted for: {stopwatch.Elapsed.TotalSeconds}");
     }
 
     protected override void MergeSortedFilesIntoOne(

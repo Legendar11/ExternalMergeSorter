@@ -15,7 +15,7 @@ namespace DocumentGenerator.Tests
 
         public GeneratorTests()
         {
-            writer = new DocumentGenerator.StringWriter(new StringWriterConfiguration());
+            writer = new Utils.StringWriter(new StringWriterConfiguration());
             generator = new Generator(writer);
         }
 

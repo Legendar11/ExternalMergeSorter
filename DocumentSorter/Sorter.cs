@@ -3,16 +3,10 @@ using DocumentSorter.Extensions;
 using DocumentSorter.Utils;
 using System.Collections.Concurrent;
 using System.IO.MemoryMappedFiles;
+using System.Linq;
 using System.Text;
 
 namespace DocumentSorter;
-
-public class Row
-{
-    public string Value = null!;
-
-    public int StreamReader;
-}
 
 public class Sorter(DocumentSorterConfiguration configuration) : ISorter
 {
@@ -69,7 +63,7 @@ public class Sorter(DocumentSorterConfiguration configuration) : ISorter
 
         var tmpDirectory = Path.GetDirectoryName(sortedFiles.First())!;
         var filesForSort = sortedFiles.ToArray();
-        var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = parallellism, CancellationToken = cancellationToken };
+        var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = 1, CancellationToken = cancellationToken };
 
         while (filesForSort.Length > filesPerMerge)
         {
@@ -112,68 +106,59 @@ public class Sorter(DocumentSorterConfiguration configuration) : ISorter
 
         using var outputSw = new StreamWriter(File.Create(outputFileName), encoding);
 
-        var (streamReaders, rows) = InitializeStreamReaders(filesArray, encoding).GetAwaiter().GetResult();
+        var streamReaders = Enumerable.Range(0, filesArray.Length)
+            .Select(i => new StreamReader(File.OpenRead(filesArray[i]), encoding))
+            .ToArray();
+
+        var lines = Enumerable.Range(0, filesArray.Length)
+            .Select(i => new LinkedLine
+            {
+                StreamReaderIndex = i,
+                Value = streamReaders[i].ReadLine()!
+            })
+            .ToList();
+
         var finishedStreamReadersCount = 0;
 
-        rows.Sort((row1, row2) => comparer.Compare(row1.Value, row2.Value));
+        lines.Sort((row1, row2) => comparer.Compare(row1.Value, row2.Value));
 
         while (finishedStreamReadersCount < streamReaders.Length)
         {
-            var valueToWrite = rows[0].Value;
-            var streamReaderIndex = rows[0].StreamReader;
+            outputSw.WriteLine(lines[0].Value);
 
-            outputSw.WriteLine(valueToWrite);
-
-            if (streamReaders[streamReaderIndex].EndOfStream)
+            var currentStreamReaderIndex = lines[0].StreamReaderIndex;
+            if (streamReaders[currentStreamReaderIndex].EndOfStream)
             {
-                var indexToRemove = rows.FindIndex(x => x.StreamReader == streamReaderIndex);
-
-                streamReaders[streamReaderIndex].Dispose();
-
-                var temporaryFilename = $"{filesArray[streamReaderIndex]}.removal";
-                File.Move(filesArray[streamReaderIndex], temporaryFilename);
-                File.Delete(temporaryFilename);
-
-                rows.RemoveAt(indexToRemove);
-
                 finishedStreamReadersCount++;
 
-                rows.Sort((row1, row2) => comparer.Compare(row1.Value, row2.Value));
+                SafeRemoval(streamReaders[currentStreamReaderIndex], filesArray[currentStreamReaderIndex]);
+
+                var indexToRemove = lines.FindIndex(x => x.StreamReaderIndex == currentStreamReaderIndex);
+
+                lines.RemoveAt(0);
 
                 continue;
             }
 
-            var value = streamReaders[streamReaderIndex].ReadLine();
-            rows[0] = new Row { Value = value!, StreamReader = streamReaderIndex };
+            var value = streamReaders[currentStreamReaderIndex].ReadLine();
+            lines[0] = new LinkedLine { Value = value!, StreamReaderIndex = currentStreamReaderIndex };
 
             var i = 1;
-            while (i < rows.Count && comparer.Compare(rows[i - 1].Value, rows[i].Value) > 0)
+            while (i < lines.Count && comparer.Compare(lines[i - 1].Value, lines[i].Value) > 0)
             {
-                (rows[i - 1], rows[i]) = (rows[i], rows[i - 1]);
+                (lines[i - 1], lines[i]) = (lines[i], lines[i - 1]);
                 i++;
             }
         }
     }
 
-    protected async Task<(StreamReader[] StreamReaders, List<Row> rows)> InitializeStreamReaders(IReadOnlyList<string> sortedFiles, Encoding encoding)
+    private static void SafeRemoval(StreamReader reader, string filename)
     {
-        var streamReaders = new StreamReader[sortedFiles.Count];
-        var rows = new List<Row>(sortedFiles.Count);
-        for (var i = 0; i < sortedFiles.Count; i++)
-        {
-            var sortedFilePath = sortedFiles[i];
-            var sortedFileStream = File.OpenRead(sortedFilePath);
-            streamReaders[i] = new StreamReader(sortedFileStream, encoding);
-            var value = await streamReaders[i].ReadLineAsync();
-            var row = new Row
-            {
-                Value = value!,
-                StreamReader = i
-            };
-            rows.Add(row);
-        }
+        reader.Dispose();
 
-        return (streamReaders, rows);
+        var temporaryFilename = $"{filename}.removal";
+        File.Move(filename, temporaryFilename);
+        File.Delete(temporaryFilename);
     }
 
     protected virtual async Task SortInitialChunkFilesAsync(

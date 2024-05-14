@@ -6,6 +6,7 @@ using DocumentGenerator.Utils;
 using DocumentSorter;
 using DocumentSorter.Configuration;
 using System.Diagnostics;
+using StringWriter = DocumentGenerator.Utils.StringWriter;
 
 var options = Parser.Default.ParseArguments<SortOptions>(args);
 if (options.Errors.Any())
@@ -13,7 +14,7 @@ if (options.Errors.Any())
     return;
 }
 
-Console.WriteLine("Document generator will be executed with next options:");
+Console.WriteLine("Document sorter will be executed with next options:");
 Console.WriteLine($"\t{nameof(SortOptions.InputFileName)}: {options.Value.InputFileName}");
 Console.WriteLine($"\t{nameof(SortOptions.OutputFilename)}: {options.Value.OutputFilename}");
 Console.WriteLine($"\t{nameof(SortOptions.DegreeOfParallelism)}: {options.Value.DegreeOfParallelism}");
@@ -23,7 +24,7 @@ Console.WriteLine($"\t{nameof(SortOptions.FileSizeToGenerate)}: {options.Value.F
 
 if (options.Value.FileSizeToGenerate != null)
 {
-    IStringWriter writer = new DocumentGenerator.StringWriter(new StringWriterConfiguration());
+    IStringWriter writer = new StringWriter(new StringWriterConfiguration());
     IGenerator documentGenerator = new Generator(writer);
     await documentGenerator.GenerateAsync(new GenerateOptions
     {
@@ -40,9 +41,9 @@ else if (!File.Exists(options.Value.InputFileName))
     return;
 }
 
-ISorter sorter = new LoggedSorter(new DocumentSorterConfiguration());
+ISorter sorter = new Sorter(new DocumentSorterConfiguration());
 
 var stopwatch = Stopwatch.StartNew();
-await sorter.SortAsync(new SortOptions());
+await sorter.SortAsync(options.Value);
 stopwatch.Stop();
 Console.WriteLine($"File is sorted! Elapesed seconds: {stopwatch.Elapsed.TotalSeconds}");
