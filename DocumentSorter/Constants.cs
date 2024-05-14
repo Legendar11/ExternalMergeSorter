@@ -8,5 +8,9 @@ public static class Constants
 
     public const string FileUnsortedExtension = ".unsorted";
 
-    public const string FilelSortedExtension = ".sorted";
+    public const string FileSortedExtension = ".sorted";
+
+    public const string TempDirectoryForChunkFiles = "tmp";
+
+    public const int FilesPerMerge = 5;
 }

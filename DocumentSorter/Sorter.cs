@@ -35,11 +35,13 @@ public class Sorter(DocumentSorterOptions options)
         stopWatch.Restart();
         var comparer = new LineComparer(options.Delimeter);
         await SortInitialChunkFilesAsync(fileNames, encoding, comparer, degreeOfParallelism.Value, cancellationToken);
-        fileNames = fileNames.Select(x => x.Replace("unsorted", "sorted")).ToArray();
+        fileNames = fileNames.Select(file => file.Replace(Constants.FileUnsortedExtension, Constants.FileSortedExtension)).ToArray();
         stopWatch.Stop();
         Console.WriteLine($"Files sorted for: {stopWatch.Elapsed.TotalSeconds}");
 
         await MergeFilesAsync(fileNames, outputFilename, encoding, comparer, degreeOfParallelism.Value, cancellationToken);
+
+        Directory.Delete(Constants.TempDirectoryForChunkFiles, true);
 
         //using (FileStream fs = new FileStream(outputFilename, FileMode.Open))
         //{
@@ -58,62 +60,39 @@ public class Sorter(DocumentSorterOptions options)
     {
         var iteraiton = 0;
 
-        //const temp = "temp";
-
-        //if (Directory.Exists("temp"))
-        //{
-
-        //}
-
         var stopWatch = new Stopwatch();
 
-        var done = false;
-        while (!done)
+        var tmpDirectory = Path.GetDirectoryName(sortedFiles.First())!;
+        var filesForSort = sortedFiles.ToArray();
+
+        do
         {
-            var runSize = 5;
-            var finalRun = sortedFiles.Count <= runSize;
-
-            if (finalRun)
-            {
-                stopWatch.Restart();
-                Merge(sortedFiles, outputFilename, encoding, comparer, cancellationToken);
-                stopWatch.Stop();
-                Console.WriteLine($"Final Merge iteration {iteraiton} completed for: {stopWatch.Elapsed.TotalSeconds}");
-                return;
-            }
-
-            var fileChunks = sortedFiles.Chunk(runSize);
-
+            var fileChunks = filesForSort.Chunk(Constants.FilesPerMerge);
             stopWatch.Restart();
-            Parallel.ForEach(fileChunks.Select((f, i) => (Files: f, Index: i)), new ParallelOptions { MaxDegreeOfParallelism = parallellism }, (fileChunk) =>
+            Parallel.ForEach(fileChunks.Select((files, index) => (Files: files, Index: index)), new ParallelOptions { MaxDegreeOfParallelism = parallellism }, (fileChunk) =>
             {
-                var outputFilename = $"data_{iteraiton}_{fileChunk.Index}.sorted";
+                var outputFilenameMerged = Path.Combine(tmpDirectory, $"data_{iteraiton}_{fileChunk.Index}.{Constants.FileSortedExtension}");
 
                 if (fileChunk.Files.Length == 1)
                 {
-                    File.Move(fileChunk.Files[0], outputFilename);
+                    File.Move(fileChunk.Files[0], outputFilenameMerged);
                     return;
                 }
 
-                Merge(fileChunk.Files, outputFilename, encoding, comparer, cancellationToken);
+                Merge(fileChunk.Files, outputFilenameMerged, encoding, comparer, cancellationToken);
             });
             stopWatch.Stop();
             Console.WriteLine($"Merge iteration {iteraiton} completed for: {stopWatch.Elapsed.TotalSeconds}");
 
-            var SortedFileExtension = ".sorted";
+            iteraiton++;
+            filesForSort = [.. Directory.GetFiles(tmpDirectory, $"*{Constants.FileSortedExtension}").OrderBy(x => Path.GetFileNameWithoutExtension(x))];
+        } while (filesForSort.Length > Constants.FilesPerMerge);
 
-            sortedFiles = Directory.GetFiles(Environment.CurrentDirectory, $"*{SortedFileExtension}")
-                .OrderBy(x => Path.GetFileNameWithoutExtension(x))
-                .ToArray();
 
-            if (sortedFiles.Count > 1)
-            {
-                iteraiton++;
-                continue;
-            }
-
-            done = true;
-        }
+        stopWatch.Restart();
+        Merge(filesForSort, outputFilename, encoding, comparer, cancellationToken);
+        stopWatch.Stop();
+        Console.WriteLine($"Final Merge iteration {iteraiton} completed for: {stopWatch.Elapsed.TotalSeconds}");
     }
 
     private void Merge(
@@ -281,22 +260,30 @@ public class Sorter(DocumentSorterOptions options)
         var fileNames = new string[fileChunks.Count];
 
         var sizeOfSymbolInBytes = encoding.GetSymbolSize();
+        var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = parallellism };
+
+        if (Directory.Exists(Constants.TempDirectoryForChunkFiles))
+        {
+            Directory.Delete(Constants.TempDirectoryForChunkFiles, true);
+        }
+
+        var tempDirectoryPath = Directory.CreateDirectory(Constants.TempDirectoryForChunkFiles).FullName;
 
         using var file = MemoryMappedFile.CreateFromFile(filePath, FileMode.Open, $"{InputFileMapNamePrefix}_{filePath}");
 
-        Parallel.ForEach(fileChunks, new ParallelOptions { MaxDegreeOfParallelism = parallellism }, (fileChunk) =>
+        Parallel.ForEach(fileChunks, parallelOptions, (fileChunk) =>
         {
             using var accessor = file.CreateViewAccessor(0, fileLength);
 
             var fileCapacity = fileChunk.End - fileChunk.Start;
 
-            fileNames[fileChunk.Index] = $"data_{fileChunk.Index}.unsorted";
+            fileNames[fileChunk.Index] = Path.Combine(tempDirectoryPath, $"data_{fileChunk.Index}.{Constants.FileUnsortedExtension}");
 
             using var chunkFile = MemoryMappedFile.CreateFromFile(
-                fileNames[fileChunk.Index],
-                FileMode.Create,
-                $"{ChunkFileMapNamePrefix}_{fileNames[fileChunk.Index]}",
-                fileCapacity);
+                   fileNames[fileChunk.Index],
+                   FileMode.Create,
+                   $"{ChunkFileMapNamePrefix}_{fileChunk.Index}",
+                   fileCapacity);
             using var chunkAccessor = chunkFile.CreateViewAccessor(0, fileCapacity);
 
             var buffer = new byte[Constants.CopyBufferSize];
