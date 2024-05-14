@@ -8,9 +8,9 @@ using System.Text;
 
 IStringWriter writer = new DocumentGenerator.StringWriter(new StringWriterOptions());
 IGenerator documentGenerator = new Generator(writer);
-await documentGenerator.GenerateAsync(new Options());
+await documentGenerator.GenerateAsync(new GenerateOptions());
 
-var sorter = new Sorter(new DocumentSorterOptions());
+var sorter = new LoggedSorter(new DocumentSorterOptions());
 
 var stopwatch = Stopwatch.StartNew();
 await sorter.SortAsync("data.txt", "data_sorted.txt");

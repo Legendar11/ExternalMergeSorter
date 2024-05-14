@@ -13,7 +13,7 @@ public class DocumentGeneratorBenchmaks
 
     private const string OutputPath = "data_benchmark_temp.txt";
 
-    [Params("1 Kb", "1 Mb", "1 Gb", "10 Gb")]
+    [Params("1 Kb", "1 Mb", "1 Gb", "5 Gb")]
     public string FileSize { get; set; } = null!;
 
     [Params("1", "4", "8", "Max")]
@@ -34,7 +34,7 @@ public class DocumentGeneratorBenchmaks
             "1 Kb" => 1024,
             "1 Mb" => 1024 * 1024,
             "1 Gb" => 1024 * 1024 * 1024,
-            "10 Gb" => 1024 * 1024 * 1024 * 10L,
+            "5 Gb" => 1024 * 1024 * 1024 * 5L,
             _ => throw new ArgumentException()
         };
         var parallelism = DegreeOfParallelism switch
@@ -46,11 +46,11 @@ public class DocumentGeneratorBenchmaks
             _ => throw new ArgumentException()
         };
 
-        await documentGenerator.GenerateAsync(new Options
+        await documentGenerator.GenerateAsync(new GenerateOptions
         {
             FileSize = fileSize,
             DegreeOfParallelism = parallelism,
-            OutputPath = OutputPath
+            OutputFilename = OutputPath
         });
     }
 }

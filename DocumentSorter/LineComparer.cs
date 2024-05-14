@@ -2,17 +2,15 @@
 
 namespace DocumentSorter;
 
-internal class LineComparer(char[] Delimeter) : IComparer<string>
+internal class LineComparer(char[] Delimeter, ConcurrentDictionary<int, int> DictHash) : IComparer<string>
 {
-    private readonly ConcurrentDictionary<int, int> dict = new(8, 1_000_000);
-
     public int Compare(string? a, string? b)
     {
         var indexA = a!.IndexOf(Delimeter[0]);
         var indexB = b!.IndexOf(Delimeter[0]);
 
-        var hash = CustomHashCodeForChars(a, indexA, a.Length, b, indexB, b.Length);
-        var isCached = dict.TryGetValue(hash, out var cached);
+        var hash = CustomHashCodeForChars(a, indexA + Delimeter.Length, a.Length - Delimeter.Length, b, indexB + Delimeter.Length, b.Length - Delimeter.Length);
+        var isCached = DictHash.TryGetValue(hash, out var cached);
 
         if (isCached && cached != 0)
         {
@@ -24,6 +22,7 @@ internal class LineComparer(char[] Delimeter) : IComparer<string>
 
         if (!isCached)
         {
+
             i = indexA + Delimeter.Length;
             j = indexB + Delimeter.Length;
             compared = 0;
@@ -37,7 +36,7 @@ internal class LineComparer(char[] Delimeter) : IComparer<string>
 
                 if (compared != 0)
                 {
-                    dict.TryAdd(hash, compared);
+                    DictHash.TryAdd(hash, compared);
                     return compared;
                 }
 
@@ -45,12 +44,12 @@ internal class LineComparer(char[] Delimeter) : IComparer<string>
                 {
                     if (j != b.Length)
                     {
-                        dict.TryAdd(hash, -1);
+                        DictHash.TryAdd(hash, -1);
                         return -1;
                     }
                     else
                     {
-                        dict.TryAdd(hash, 0);
+                        DictHash.TryAdd(hash, 0);
                         break;
                     }
                 }
@@ -58,12 +57,12 @@ internal class LineComparer(char[] Delimeter) : IComparer<string>
                 {
                     if (i != a.Length)
                     {
-                        dict.TryAdd(hash, 1);
+                        DictHash.TryAdd(hash, 1);
                         return 1;
                     }
                     else
                     {
-                        dict.TryAdd(hash, 0);
+                        DictHash.TryAdd(hash, 0);
                         break;
                     }
                 }

@@ -3,10 +3,10 @@ using System.Text;
 
 namespace DocumentGenerator.Configuration;
 
-public class Options
+public class GenerateOptions
 {
     [Option('o', "output", Required = false, HelpText = "Set filename")]
-    public string OutputPath { get; init; } = "data.txt";
+    public string OutputFilename { get; init; } = "data.txt";
 
     [Option('s', "size", Required = false, HelpText = "Set file size")]
     public long FileSize { get; init; } = 1024 * 1024 * 1024;

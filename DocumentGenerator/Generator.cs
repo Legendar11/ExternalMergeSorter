@@ -1,27 +1,39 @@
 ﻿using DocumentGenerator.Configuration;
 using DocumentGenerator.Extensions;
 using System.IO.MemoryMappedFiles;
-using System.Text;
 
 namespace DocumentGenerator;
 
 public class Generator(IStringWriter writer) : IGenerator
 {
-    private const string NewFileMapNamePrefix = "generated_";
-
-    public async Task GenerateAsync(Options options, CancellationToken cancellationToken = default)
+    public async Task GenerateAsync(GenerateOptions options, CancellationToken cancellationToken = default)
     {
-        using var file = MemoryMappedFile.CreateFromFile(
-                options.OutputPath,
-                FileMode.Create,
-                $"{NewFileMapNamePrefix}_{options.OutputPath}",
-                options.FileSize);
+        const string NewFileMapNamePrefix = "generated_";
+
+        options.DegreeOfParallelism = options.FileSize > 1024
+            ? options.DegreeOfParallelism
+            : 1;
+
+        var parallelOptions = new ParallelOptions
+        {
+            MaxDegreeOfParallelism = options.DegreeOfParallelism,
+            CancellationToken = cancellationToken
+        };
 
         var sizeOfSymbolInBytes = options.Encoding.GetByteCount("0");
 
-        var accessors = CreateFileAccessors(file, options.FileSize, sizeOfSymbolInBytes, options.DegreeOfParallelism);
+        using var file = MemoryMappedFile.CreateFromFile(
+                options.OutputFilename,
+                FileMode.Create,
+                $"{NewFileMapNamePrefix}_{options.OutputFilename}",
+                options.FileSize);
 
-        var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = options.DegreeOfParallelism, CancellationToken = cancellationToken };
+        var accessors = CreateFileAccessors(
+            file,
+            options.FileSize,
+            sizeOfSymbolInBytes,
+            options.DegreeOfParallelism);
+
         await Parallel.ForEachAsync(accessors, parallelOptions, (accessor, ct) =>
         {
             var positionInView = 0L;
@@ -30,7 +42,7 @@ public class Generator(IStringWriter writer) : IGenerator
             var buffer = new char[Constants.LineBufferSize];
             var bufferPosition = 0;
 
-            var bufferBytes = new byte[Constants.LineBufferSize];
+            var bufferBytes = new byte[Constants.LineBufferSize * sizeOfSymbolInBytes];
             var bufferBytesPosition = 0;
             var encodedBytesCount = 0;
 
@@ -40,9 +52,20 @@ public class Generator(IStringWriter writer) : IGenerator
 
                 writer.WriteLine(buffer, ref bufferPosition);
 
-                encodedBytesCount = options.Encoding.GetBytes(buffer, 0, bufferPosition, bufferBytes, bufferBytesPosition);
+                encodedBytesCount = options.Encoding.GetBytes(
+                    buffer,
+                    0,
+                    bufferPosition,
+                    bufferBytes,
+                    bufferBytesPosition);
 
-                var isWritten = accessor.TryWriteByteArray(positionInView, bufferBytes, 0, encodedBytesCount, out newPositionInView);
+                var isWritten = accessor.TryWriteByteArray(
+                    positionInView,
+                    bufferBytes,
+                    0,
+                    encodedBytesCount,
+                    out newPositionInView);
+
                 if (isWritten)
                 {
                     positionInView = newPositionInView;
@@ -79,7 +102,12 @@ public class Generator(IStringWriter writer) : IGenerator
                 remainingSymbolsToWrite += writer.Options.NewLine.Length;
 
                 // add extra symbols to the last line of an accessor
-                encodedBytesCount = options.Encoding.GetBytes(buffer, 0, remainingSymbolsToWrite, bufferBytes, bufferBytesPosition);
+                encodedBytesCount = options.Encoding.GetBytes(
+                    buffer,
+                    0,
+                    remainingSymbolsToWrite,
+                    bufferBytes,
+                    bufferBytesPosition);
                 accessor.WriteArray(positionInView, bufferBytes, 0, encodedBytesCount);
             }
 
@@ -92,7 +120,11 @@ public class Generator(IStringWriter writer) : IGenerator
         }
     }
 
-    private static MemoryMappedViewAccessor[] CreateFileAccessors(MemoryMappedFile file, long fileSize, int sizeOfSymbolInBytes, int count)
+    private static MemoryMappedViewAccessor[] CreateFileAccessors(
+        MemoryMappedFile file,
+        long fileSize,
+        int sizeOfSymbolInBytes,
+        int count)
     {
         var viewSize = fileSize / count;
 

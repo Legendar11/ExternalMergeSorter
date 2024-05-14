@@ -4,7 +4,7 @@ public static class Constants
 {
     public static int DefaultDegreeOfParallelism => (Environment.ProcessorCount / 2) + 1;
 
-    public const long LineBufferSize = 1_000_000L;
+    public const long LineBufferSize = 200_000L;
 
     public readonly static char[][] Phrases =
     [

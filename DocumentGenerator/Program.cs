@@ -3,22 +3,21 @@ using DocumentGenerator;
 using DocumentGenerator.Configuration;
 using System.Diagnostics;
 
-var options = Parser.Default.ParseArguments<Options>(args);
+var options = Parser.Default.ParseArguments<GenerateOptions>(args);
 if (options.Errors.Any())
 {
     return;
 }
 if (options.Value.FileSize <= 1024 && options.Value.DegreeOfParallelism != 1)
 {
-    options.Value.DegreeOfParallelism = 1;
     Console.WriteLine("For files less than or equal 1Kb degree of parallelism = 1");
 }
 
 Console.WriteLine("Document generator will be executed with next options:");
-Console.WriteLine($"\t{nameof(Options.OutputPath)}: {options.Value.OutputPath}");
-Console.WriteLine($"\t{nameof(Options.FileSize)}: {options.Value.FileSize}");
-Console.WriteLine($"\t{nameof(Options.DegreeOfParallelism)}: {options.Value.DegreeOfParallelism}");
-Console.WriteLine($"\t{nameof(Options.Encoding)}: {options.Value.Encoding.EncodingName}");
+Console.WriteLine($"\t{nameof(GenerateOptions.OutputFilename)}: {options.Value.OutputFilename}");
+Console.WriteLine($"\t{nameof(GenerateOptions.FileSize)}: {options.Value.FileSize}");
+Console.WriteLine($"\t{nameof(GenerateOptions.DegreeOfParallelism)}: {options.Value.DegreeOfParallelism}");
+Console.WriteLine($"\t{nameof(GenerateOptions.Encoding)}: {options.Value.Encoding.EncodingName}");
 
 IStringWriter writer = new DocumentGenerator.StringWriter(new StringWriterOptions());
 IGenerator documentGenerator = new Generator(writer);

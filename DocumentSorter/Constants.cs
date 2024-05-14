@@ -2,7 +2,7 @@
 
 public static class Constants
 {
-    public static int DefaultDegreeOfParallelism => Environment.ProcessorCount - 1; //(Environment.ProcessorCount / 2) + 1; // // 
+    public static int DefaultDegreeOfParallelism => (Environment.ProcessorCount / 2) + 1; // Environment.ProcessorCount - 1; // // // 
 
     public const int CopyBufferSize = 1024 * 1024;
 
@@ -13,4 +13,6 @@ public static class Constants
     public const string TempDirectoryForChunkFiles = "tmp";
 
     public const int FilesPerMerge = 5;
+
+    public const int DictionaryHashCapacity = 1024 * 1024 * 10;
 }

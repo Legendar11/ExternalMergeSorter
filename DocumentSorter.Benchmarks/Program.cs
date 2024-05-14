@@ -19,7 +19,7 @@ public class DocumentSorterBenchmaks
     {
         IStringWriter writer = new DocumentGenerator.StringWriter(new DocumentGenerator.Configuration.StringWriterOptions());
         documentGenerator = new Generator(writer);
-        await documentGenerator.GenerateAsync(new DocumentGenerator.Configuration.Options());
+        await documentGenerator.GenerateAsync(new DocumentGenerator.Configuration.GenerateOptions());
     }
 
     [Benchmark]

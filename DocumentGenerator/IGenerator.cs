@@ -4,5 +4,5 @@ namespace DocumentGenerator;
 
 public interface IGenerator
 {
-    Task GenerateAsync(Options options, CancellationToken cancellationToken = default);
+    Task GenerateAsync(GenerateOptions options, CancellationToken cancellationToken = default);
 }

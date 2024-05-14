@@ -4,15 +4,19 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO.MemoryMappedFiles;
 using System.Text;
-using Row = (string Value, int StreamReader);
+
 
 namespace DocumentSorter;
 
+public class Row
+{
+    public string Value = null!;
+
+    public int StreamReader;
+}
+
 public class Sorter(DocumentSorterOptions options)
 {
-    const string InputFileMapNamePrefix = "input_";
-    const string ChunkFileMapNamePrefix = "chunk_";
-
     public async Task SortAsync(
         string inputFilename,
         string outputFilename,
@@ -27,30 +31,20 @@ public class Sorter(DocumentSorterOptions options)
 
         var fileChunks = GenerateFileChunks(inputFilename, encoding, options.InitialChunkFileSize, options.NewLine);
 
-        stopWatch.Restart();
         var fileNames = SeparateFileByChunks(inputFilename, encoding, fileChunks, degreeOfParallelism.Value);
-        stopWatch.Stop();
-        Console.WriteLine($"Chunk files created for: {stopWatch.Elapsed.TotalSeconds}");
 
-        stopWatch.Restart();
-        var comparer = new LineComparer(options.Delimeter);
+        var dictHash = new ConcurrentDictionary<int, int>(degreeOfParallelism.Value, Constants.DictionaryHashCapacity);
+        var comparer = new LineComparer(options.Delimeter, dictHash);
+
         await SortInitialChunkFilesAsync(fileNames, encoding, comparer, degreeOfParallelism.Value, cancellationToken);
         fileNames = fileNames.Select(file => file.Replace(Constants.FileUnsortedExtension, Constants.FileSortedExtension)).ToArray();
-        stopWatch.Stop();
-        Console.WriteLine($"Files sorted for: {stopWatch.Elapsed.TotalSeconds}");
 
-        await MergeFilesAsync(fileNames, outputFilename, encoding, comparer, degreeOfParallelism.Value, cancellationToken);
+        MergeSortedFilesIntoOne(fileNames, outputFilename, encoding, comparer, degreeOfParallelism.Value, cancellationToken);
 
         Directory.Delete(Constants.TempDirectoryForChunkFiles, true);
-
-        //using (FileStream fs = new FileStream(outputFilename, FileMode.Open))
-        //{
-        //    fs.SetLength(fs.Length - 4);
-        //}
     }
 
-
-    private async Task MergeFilesAsync(
+    protected virtual void MergeSortedFilesIntoOne(
         IReadOnlyCollection<string> sortedFiles,
         string outputFilename,
         Encoding encoding,
@@ -60,42 +54,41 @@ public class Sorter(DocumentSorterOptions options)
     {
         var iteraiton = 0;
 
-        var stopWatch = new Stopwatch();
-
         var tmpDirectory = Path.GetDirectoryName(sortedFiles.First())!;
         var filesForSort = sortedFiles.ToArray();
+        var parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = parallellism, CancellationToken = cancellationToken };
 
-        do
+        while (filesForSort.Length > Constants.FilesPerMerge)
         {
-            var fileChunks = filesForSort.Chunk(Constants.FilesPerMerge);
-            stopWatch.Restart();
-            Parallel.ForEach(fileChunks.Select((files, index) => (Files: files, Index: index)), new ParallelOptions { MaxDegreeOfParallelism = parallellism }, (fileChunk) =>
-            {
-                var outputFilenameMerged = Path.Combine(tmpDirectory, $"data_{iteraiton}_{fileChunk.Index}.{Constants.FileSortedExtension}");
+            var fileChunks = filesForSort
+                .Chunk(Constants.FilesPerMerge)
+                .Select((files, index) =>
+                (
+                    Files: files,
+                    Index: index,
+                    Output: Path.Combine(tmpDirectory, $"data_{iteraiton}_{index}.{Constants.FileSortedExtension}")
+                ));
 
+            Parallel.ForEach(fileChunks, (fileChunk) =>
+            {
                 if (fileChunk.Files.Length == 1)
                 {
-                    File.Move(fileChunk.Files[0], outputFilenameMerged);
-                    return;
+                    File.Move(fileChunk.Files[0], fileChunk.Output);
                 }
-
-                Merge(fileChunk.Files, outputFilenameMerged, encoding, comparer, cancellationToken);
+                else
+                {
+                    MergeFileChunk(fileChunk.Files, fileChunk.Output, encoding, comparer, cancellationToken);
+                }
             });
-            stopWatch.Stop();
-            Console.WriteLine($"Merge iteration {iteraiton} completed for: {stopWatch.Elapsed.TotalSeconds}");
 
             iteraiton++;
-            filesForSort = [.. Directory.GetFiles(tmpDirectory, $"*{Constants.FileSortedExtension}").OrderBy(x => Path.GetFileNameWithoutExtension(x))];
-        } while (filesForSort.Length > Constants.FilesPerMerge);
+            filesForSort = Directory.GetFiles(tmpDirectory, $"*{Constants.FileSortedExtension}");
+        }
 
-
-        stopWatch.Restart();
-        Merge(filesForSort, outputFilename, encoding, comparer, cancellationToken);
-        stopWatch.Stop();
-        Console.WriteLine($"Final Merge iteration {iteraiton} completed for: {stopWatch.Elapsed.TotalSeconds}");
+        MergeFileChunk(filesForSort, outputFilename, encoding, comparer, cancellationToken);
     }
 
-    private void Merge(
+    protected virtual void MergeFileChunk(
         IReadOnlyCollection<string> filesToMerge,
         string outputFileName,
         Encoding encoding,
@@ -107,13 +100,11 @@ public class Sorter(DocumentSorterOptions options)
         using var outputSw = new StreamWriter(File.Create(outputFileName), encoding);
 
         var (streamReaders, rows) = InitializeStreamReaders(filesArray, encoding).GetAwaiter().GetResult();
-        var finishedStreamReaders = new List<int>(streamReaders.Length);
+        var finishedStreamReadersCount = 0;
 
         rows.Sort((row1, row2) => comparer.Compare(row1.Value, row2.Value));
 
-        var done = false;
-
-        while (!done)
+        while (finishedStreamReadersCount < streamReaders.Length)
         {
             var valueToWrite = rows[0].Value;
             var streamReaderIndex = rows[0].StreamReader;
@@ -123,9 +114,16 @@ public class Sorter(DocumentSorterOptions options)
             if (streamReaders[streamReaderIndex].EndOfStream)
             {
                 var indexToRemove = rows.FindIndex(x => x.StreamReader == streamReaderIndex);
+
+                streamReaders[streamReaderIndex].Dispose();
+
+                var temporaryFilename = $"{filesArray[streamReaderIndex]}.removal";
+                File.Move(filesArray[streamReaderIndex], temporaryFilename);
+                File.Delete(temporaryFilename);
+
                 rows.RemoveAt(indexToRemove);
-                finishedStreamReaders.Add(streamReaderIndex);
-                done = finishedStreamReaders.Count == streamReaders.Length;
+
+                finishedStreamReadersCount++;
 
                 rows.Sort((row1, row2) => comparer.Compare(row1.Value, row2.Value));
 
@@ -138,25 +136,13 @@ public class Sorter(DocumentSorterOptions options)
             var i = 1;
             while (i < rows.Count && comparer.Compare(rows[i - 1].Value, rows[i].Value) > 0)
             {
-                var tmp = rows[i];
-                rows[i] = rows[i - 1];
-                rows[i - 1] = tmp;
+                (rows[i - 1], rows[i]) = (rows[i], rows[i - 1]);
                 i++;
             }
-
-        }
-
-        for (var i = 0; i < streamReaders.Length; i++)
-        {
-            streamReaders[i].Dispose();
-
-            var temporaryFilename = $"{filesArray[i]}.removal";
-            File.Move(filesArray[i], temporaryFilename);
-            File.Delete(temporaryFilename);
         }
     }
 
-    private async Task<(StreamReader[] StreamReaders, List<Row> rows)> InitializeStreamReaders(IReadOnlyList<string> sortedFiles, Encoding encoding)
+    protected async Task<(StreamReader[] StreamReaders, List<Row> rows)> InitializeStreamReaders(IReadOnlyList<string> sortedFiles, Encoding encoding)
     {
         var streamReaders = new StreamReader[sortedFiles.Count];
         var rows = new List<Row>(sortedFiles.Count);
@@ -177,8 +163,7 @@ public class Sorter(DocumentSorterOptions options)
         return (streamReaders, rows);
     }
 
-
-    private async Task SortInitialChunkFilesAsync(
+    protected virtual async Task SortInitialChunkFilesAsync(
         IReadOnlyCollection<string> fileNames,
         Encoding encoding,
         IComparer<string> comparer,
@@ -200,7 +185,7 @@ public class Sorter(DocumentSorterOptions options)
         });
     }
 
-    private static IReadOnlyCollection<FileChunk> GenerateFileChunks(string filePath, Encoding encoding, long chunkSize, char[] newLine)
+    protected virtual IReadOnlyCollection<FileChunk> GenerateFileChunks(string filePath, Encoding encoding, long chunkSize, char[] newLine)
     {
         var fileLength = new FileInfo(filePath).Length;
 
@@ -219,6 +204,7 @@ public class Sorter(DocumentSorterOptions options)
         var positionInFile = 0L;
         var buffer = new byte[newLineBytesCount];
 
+        const string InputFileMapNamePrefix = "input_";
         using var file = MemoryMappedFile.CreateFromFile(filePath, FileMode.Open, $"{InputFileMapNamePrefix}_{filePath}");
         using var accessor = file.CreateViewAccessor(0, fileLength);
 
@@ -254,7 +240,7 @@ public class Sorter(DocumentSorterOptions options)
         return fileChunks;
     }
 
-    private static IReadOnlyCollection<string> SeparateFileByChunks(string filePath, Encoding encoding, IReadOnlyCollection<FileChunk> fileChunks, int parallellism)
+    protected virtual IReadOnlyCollection<string> SeparateFileByChunks(string filePath, Encoding encoding, IReadOnlyCollection<FileChunk> fileChunks, int parallellism)
     {
         var fileLength = new FileInfo(filePath).Length;
         var fileNames = new string[fileChunks.Count];
@@ -269,6 +255,7 @@ public class Sorter(DocumentSorterOptions options)
 
         var tempDirectoryPath = Directory.CreateDirectory(Constants.TempDirectoryForChunkFiles).FullName;
 
+        const string InputFileMapNamePrefix = "input_";
         using var file = MemoryMappedFile.CreateFromFile(filePath, FileMode.Open, $"{InputFileMapNamePrefix}_{filePath}");
 
         Parallel.ForEach(fileChunks, parallelOptions, (fileChunk) =>
@@ -279,6 +266,7 @@ public class Sorter(DocumentSorterOptions options)
 
             fileNames[fileChunk.Index] = Path.Combine(tempDirectoryPath, $"data_{fileChunk.Index}.{Constants.FileUnsortedExtension}");
 
+            const string ChunkFileMapNamePrefix = "chunk_";
             using var chunkFile = MemoryMappedFile.CreateFromFile(
                    fileNames[fileChunk.Index],
                    FileMode.Create,
