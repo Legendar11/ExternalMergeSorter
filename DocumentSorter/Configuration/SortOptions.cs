@@ -23,5 +23,5 @@ public class SortOptions
     public  int FilesPerMerge { get; init; } = 5;
 
     [Option('g', "generate", Required = false, HelpText = "In case is provided - file with provided size will be generated")]
-    public long? FileSizeToGenerate { get; init; } = 1024 * 1024;
+    public long? FileSizeToGenerate { get; init; } = null; //1024 * 1024 * 1024;
 }
