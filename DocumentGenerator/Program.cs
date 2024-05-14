@@ -10,9 +10,9 @@ if (options.Errors.Any())
 {
     return;
 }
-if (options.Value.FileSize <= 1024 && options.Value.DegreeOfParallelism != 1)
+if (options.Value.FileSize <= (1024 * 1024) && options.Value.DegreeOfParallelism != 1)
 {
-    Console.WriteLine("For files less than or equal 1Kb degree of parallelism = 1");
+    Console.WriteLine("For files less than or equal 1 Mb degree of parallelism = 1");
 }
 
 Console.WriteLine("Document generator will be executed with next options:");

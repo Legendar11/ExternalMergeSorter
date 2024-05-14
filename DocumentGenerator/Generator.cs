@@ -9,9 +9,7 @@ public class Generator(IStringWriter writer) : IGenerator
 {
     public async Task GenerateAsync(GenerateOptions options, CancellationToken cancellationToken = default)
     {
-        const string NewFileMapNamePrefix = "generated_";
-
-        options.DegreeOfParallelism = options.FileSize > 1024
+        options.DegreeOfParallelism = options.FileSize > (1024 * 1024)
             ? options.DegreeOfParallelism
             : 1;
 
@@ -23,10 +21,12 @@ public class Generator(IStringWriter writer) : IGenerator
 
         var sizeOfSymbolInBytes = options.Encoding.GetByteCount("0");
 
+        File.Create(options.OutputFilename).Close();
+
         using var file = MemoryMappedFile.CreateFromFile(
                 options.OutputFilename,
-                FileMode.Create,
-                $"{NewFileMapNamePrefix}_{options.OutputFilename}",
+                FileMode.Open,
+                null,
                 options.FileSize);
 
         var accessors = CreateFileAccessors(
