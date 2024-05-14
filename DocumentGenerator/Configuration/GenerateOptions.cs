@@ -17,5 +17,5 @@ public class GenerateOptions
     public Encoding Encoding => Encoding.GetEncoding(EncodingString);
 
     [Option('p', "parallelism", Required = false, HelpText = "Set degree of parallelism")]
-    public int DegreeOfParallelism { get; set; } = (Environment.ProcessorCount / 2) + 1;
+    public int DegreeOfParallelism { get; set; } = (Environment.ProcessorCount / 2) + (Environment.ProcessorCount / 4);
 }

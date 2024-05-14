@@ -1,4 +1,5 @@
 using DocumentGenerator.Configuration;
+using DocumentGenerator.Utils;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -14,7 +15,7 @@ namespace DocumentGenerator.Tests
 
         public GeneratorTests()
         {
-            writer = new DocumentGenerator.StringWriter(new StringWriterOptions());
+            writer = new DocumentGenerator.StringWriter(new StringWriterConfiguration());
             generator = new Generator(writer);
         }
 

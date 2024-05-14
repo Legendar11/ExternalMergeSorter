@@ -1,10 +1,11 @@
 ﻿using DocumentSorter.Configuration;
+using DocumentSorter.Utils;
 using System.Diagnostics;
 using System.Text;
 
 namespace DocumentSorter;
 
-internal class LoggedSorter(DocumentSorterOptions options) : Sorter(options)
+internal class LoggedSorter(DocumentSorterConfiguration options) : Sorter(options)
 {
     private readonly Stopwatch stopwatch = new();
 

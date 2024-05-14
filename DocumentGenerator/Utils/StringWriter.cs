@@ -1,12 +1,12 @@
 ﻿using DocumentGenerator.Configuration;
 
-namespace DocumentGenerator;
+namespace DocumentGenerator.Utils;
 
-public class StringWriter(StringWriterOptions options) : IStringWriter
+public class StringWriter(StringWriterConfiguration options) : IStringWriter
 {
     private static readonly Random random = new();
 
-    public StringWriterOptions Options => options;
+    public StringWriterConfiguration Options => options;
 
     public int WriteLine(char[] buffer, ref int position)
     {
@@ -18,7 +18,7 @@ public class StringWriter(StringWriterOptions options) : IStringWriter
             buffer[position] = '0';
             position++;
         }
-        
+
         if (number < 0)
         {
             buffer[position] = '-';

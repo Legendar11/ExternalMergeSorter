@@ -1,13 +1,6 @@
-﻿using Microsoft.VisualBasic;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace DocumentGenerator.Configuration;
 
-namespace DocumentGenerator.Configuration;
-
-public class StringWriterOptions
+public class StringWriterConfiguration
 {
     public int GenerateNumberFrom { get; init; } = 0;
 

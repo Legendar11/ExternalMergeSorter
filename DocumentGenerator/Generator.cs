@@ -1,5 +1,6 @@
 ﻿using DocumentGenerator.Configuration;
 using DocumentGenerator.Extensions;
+using DocumentGenerator.Utils;
 using System.IO.MemoryMappedFiles;
 
 namespace DocumentGenerator;

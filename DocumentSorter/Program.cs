@@ -2,6 +2,7 @@
 using CommandLine;
 using DocumentGenerator;
 using DocumentGenerator.Configuration;
+using DocumentGenerator.Utils;
 using DocumentSorter;
 using DocumentSorter.Configuration;
 using System.Diagnostics;
@@ -22,7 +23,7 @@ Console.WriteLine($"\t{nameof(SortOptions.FileSizeToGenerate)}: {options.Value.F
 
 if (options.Value.FileSizeToGenerate != null)
 {
-    IStringWriter writer = new DocumentGenerator.StringWriter(new StringWriterOptions());
+    IStringWriter writer = new DocumentGenerator.StringWriter(new StringWriterConfiguration());
     IGenerator documentGenerator = new Generator(writer);
     await documentGenerator.GenerateAsync(new GenerateOptions
     {
@@ -39,7 +40,7 @@ else if (!File.Exists(options.Value.InputFileName))
     return;
 }
 
-ISorter sorter = new LoggedSorter(new DocumentSorterOptions());
+ISorter sorter = new LoggedSorter(new DocumentSorterConfiguration());
 
 var stopwatch = Stopwatch.StartNew();
 await sorter.SortAsync(new SortOptions());

@@ -1,7 +1,9 @@
 ﻿using CommandLine;
 using DocumentGenerator;
 using DocumentGenerator.Configuration;
+using DocumentGenerator.Utils;
 using System.Diagnostics;
+using StringWriter = DocumentGenerator.Utils.StringWriter;
 
 var options = Parser.Default.ParseArguments<GenerateOptions>(args);
 if (options.Errors.Any())
@@ -19,7 +21,7 @@ Console.WriteLine($"\t{nameof(GenerateOptions.FileSize)}: {options.Value.FileSiz
 Console.WriteLine($"\t{nameof(GenerateOptions.DegreeOfParallelism)}: {options.Value.DegreeOfParallelism}");
 Console.WriteLine($"\t{nameof(GenerateOptions.Encoding)}: {options.Value.Encoding.EncodingName}");
 
-IStringWriter writer = new DocumentGenerator.StringWriter(new StringWriterOptions());
+IStringWriter writer = new StringWriter(new StringWriterConfiguration());
 IGenerator documentGenerator = new Generator(writer);
 
 var stopwatch = Stopwatch.StartNew();

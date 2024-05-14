@@ -2,6 +2,7 @@
 using BenchmarkDotNet.Running;
 using DocumentGenerator;
 using DocumentGenerator.Configuration;
+using DocumentGenerator.Utils;
 
 BenchmarkRunner.Run<DocumentGeneratorBenchmaks>();
 
@@ -13,7 +14,7 @@ public class DocumentGeneratorBenchmaks
 
     private const string OutputPath = "data_benchmark_temp.txt";
 
-    [Params("1 Kb", "1 Mb", "1 Gb", "5 Gb")]
+    [Params("1 Mb", "1 Gb", "5 Gb")]
     public string FileSize { get; set; } = null!;
 
     [Params("1", "4", "8", "Max")]
@@ -22,7 +23,7 @@ public class DocumentGeneratorBenchmaks
     [GlobalSetup]
     public void Setup()
     {
-        IStringWriter writer = new DocumentGenerator.StringWriter(new StringWriterOptions());
+        IStringWriter writer = new DocumentGenerator.StringWriter(new StringWriterConfiguration());
         documentGenerator = new Generator(writer);
     }
 

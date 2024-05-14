@@ -1,6 +1,6 @@
 ﻿using System.Collections.Concurrent;
 
-namespace DocumentSorter;
+namespace DocumentSorter.Utils;
 
 internal class LineComparer(char[] Delimeter, ConcurrentDictionary<int, int> DictHash) : IComparer<string>
 {

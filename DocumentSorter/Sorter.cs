@@ -1,7 +1,7 @@
 ﻿using DocumentSorter.Configuration;
 using DocumentSorter.Extensions;
+using DocumentSorter.Utils;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.IO.MemoryMappedFiles;
 using System.Text;
 
@@ -14,7 +14,7 @@ public class Row
     public int StreamReader;
 }
 
-public class Sorter(DocumentSorterOptions configuration) : ISorter
+public class Sorter(DocumentSorterConfiguration configuration) : ISorter
 {
     public async Task SortAsync(SortOptions options, CancellationToken cancellationToken = default)
     {

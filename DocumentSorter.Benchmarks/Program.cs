@@ -2,6 +2,7 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using DocumentGenerator;
+using DocumentGenerator.Utils;
 using DocumentSorter;
 
 BenchmarkRunner.Run<DocumentSorterBenchmaks>();
@@ -17,7 +18,7 @@ public class DocumentSorterBenchmaks
     [GlobalSetup]
     public async Task Setup()
     {
-        IStringWriter writer = new DocumentGenerator.StringWriter(new DocumentGenerator.Configuration.StringWriterOptions());
+        IStringWriter writer = new DocumentGenerator.StringWriter(new DocumentGenerator.Configuration.StringWriterConfiguration());
         documentGenerator = new Generator(writer);
         await documentGenerator.GenerateAsync(new DocumentGenerator.Configuration.GenerateOptions());
     }
@@ -25,7 +26,7 @@ public class DocumentSorterBenchmaks
     [Benchmark]
     public async Task Sort_Document()
     {
-        var sorter = new Sorter(new DocumentSorter.Configuration.DocumentSorterOptions());
+        var sorter = new Sorter(new DocumentSorter.Configuration.DocumentSorterConfiguration());
 
         await sorter.SortAsync("data.txt", "data_sorted.txt");
     }

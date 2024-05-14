@@ -1,10 +1,10 @@
 ﻿using DocumentGenerator.Configuration;
 
-namespace DocumentGenerator;
+namespace DocumentGenerator.Utils;
 
 public interface IStringWriter
 {
-    StringWriterOptions Options { get; }
+    StringWriterConfiguration Options { get; }
 
     int WriteLine(char[] buffer, ref int bufferPosition);
 

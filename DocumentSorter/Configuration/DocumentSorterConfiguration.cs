@@ -1,6 +1,6 @@
 ﻿namespace DocumentSorter.Configuration;
 
-public class DocumentSorterOptions
+public class DocumentSorterConfiguration
 {
     public long InitialChunkFileSize { get; init; } = 1024 * 1024;
 
