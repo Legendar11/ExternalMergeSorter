@@ -9,20 +9,19 @@ Provided program have several levels for configuraion:
 - Constants: static data used for algorithms, minor parameters and constants 
 
 ### Options for generation
-- `input (i)` - input filename for unsorted document
-- `output (o)` - output filename for sorted document
-- `encoding (e)` - encoding for input & output files
-- `parallelism (p)` - degree of parallelism
+- `output (o)` - output filename for generated document (data.txt by default)
+- `encoding (e)` - encoding for input & output files (Encoding.Default by default)
+- `parallelism (p)` - degree of parallelism (75% of processor cores by default)
 - `from (f)` - start of the generated random numbers range (included in range)
 - `to (t)` - end of the generated random numbers range (not included in range)
 
-### Options for sorting:
-- `input (i)` - input filename for unsorted document
-- `output (o)` - output filename for sorted document
-- `encoding (e)` - encoding for input & output files
-- `parallelism (p)` - degree of parallelism
-- `merge (m)` - how many files are merged by external sort iteration
-- `generate (g)` - specify in case you need to generate file with provided filesize before sorting
+### Options for sorting
+- `input (i)` - input filename for unsorted document (data.txt by default)
+- `output (o)` - output filename for sorted document (data_sorted.txt by default)
+- `encoding (e)` - encoding for input & output files (Encoding.Default by default)
+- `parallelism (p)` - degree of parallelism (75% of processor cores by default)
+- `merge (m)` - how many files are merged by external sort iteration (5 by default)
+- `generate (g)` - specify in case you need to generate file with provided filesize before sorting (no generation by default)
 
 ## Rapidly fast
 We are committed to efficiency paradigms hence we know when, how and we should choose different data types and algorithms:
