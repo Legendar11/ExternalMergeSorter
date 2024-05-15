@@ -2,7 +2,6 @@ using DocumentGenerator;
 using DocumentGenerator.Configuration;
 using DocumentGenerator.Utils;
 using DocumentSorter.Configuration;
-using System.IO;
 
 namespace DocumentSorter.Tests
 {
@@ -39,6 +38,95 @@ namespace DocumentSorter.Tests
         public void Cleanup()
         {
             Directory.Delete(TempDirectory, true);
+        }
+
+        [TestMethod]
+        [DataRow(1024)]
+        [DataRow(1024 * 1024)]
+        [DataRow(1024 * 1024 * 10)]
+        public async Task FileSizes_Are_Equal(long fileSize)
+        {
+            var filenameInput = GenerateFilename();
+            var filenameOutput = GenerateFilename();
+
+            await generator.GenerateAsync(new GenerateOptions
+            {
+                FileSize = fileSize,
+                OutputFilename = filenameInput
+            });
+
+            sorter.Sort(new SortOptions
+            {
+                InputFileName = filenameInput,
+                OutputFilename = filenameOutput
+            });
+
+            var generatedFileInput = new FileInfo(filenameInput).Length;
+            var generatedFileOutput = new FileInfo(filenameOutput).Length;
+
+            Assert.AreEqual(fileSize, generatedFileInput);
+            Assert.AreEqual(fileSize, generatedFileOutput);
+            Assert.AreEqual(generatedFileInput, generatedFileOutput);
+        }
+
+        [TestMethod]
+        [DataRow(1024)]
+        [DataRow(1024 * 1024)]
+        [DataRow(1024 * 1024 * 10)]
+        public async Task AllLines_From_Generated_Exist_In_Sorted(long fileSize)
+        {
+            var filenameInput = GenerateFilename();
+            var filenameOutput = GenerateFilename();
+
+            await generator.GenerateAsync(new GenerateOptions
+            {
+                FileSize = fileSize,
+                OutputFilename = filenameInput
+            });
+
+            sorter.Sort(new SortOptions
+            {
+                InputFileName = filenameInput,
+                OutputFilename = filenameOutput
+            });
+
+            var dict = new Dictionary<string, int>();
+
+            using (var reader = new StreamReader(filenameInput))
+            {
+                while (!reader.EndOfStream)
+                {
+                    var line = reader.ReadLine()!;
+
+                    if (dict.ContainsKey(line))
+                    {
+                        dict[line] += 1;
+                    }
+                    else
+                    {
+                        dict[line] = 1;
+                    }
+                }
+            }
+
+            using (var reader = new StreamReader(filenameOutput))
+            {
+                while (!reader.EndOfStream)
+                {
+                    var line = reader.ReadLine()!;
+
+                    if (!dict.TryGetValue(line, out int value))
+                    {
+                        Assert.Fail($"Sorted file does not contain line from original file: {line}");
+                    }
+                    else
+                    {
+                        dict[line] = --value;
+                    }
+                }
+            }
+
+            Assert.IsTrue(dict.Values.All(value => value == 0), "Incosistent lines from original and sorted files");
         }
 
         [TestMethod]
