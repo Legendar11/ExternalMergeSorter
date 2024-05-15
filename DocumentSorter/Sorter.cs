@@ -3,7 +3,6 @@ using DocumentSorter.Extensions;
 using DocumentSorter.Utils;
 using System.Collections.Concurrent;
 using System.IO.MemoryMappedFiles;
-using System.Linq;
 using System.Text;
 
 namespace DocumentSorter;
@@ -105,7 +104,7 @@ public class Sorter(DocumentSorterConfiguration configuration) : ISorter
         CancellationToken cancellationToken)
     {
         var filesArray = filesToMerge.ToArray();
-
+        
         using var outputSw = new StreamWriter(File.Create(outputFileName), encoding);
 
         var streamReaders = Enumerable.Range(0, filesArray.Length)

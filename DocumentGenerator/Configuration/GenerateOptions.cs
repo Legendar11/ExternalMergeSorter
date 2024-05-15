@@ -12,9 +12,12 @@ public class GenerateOptions
     public long FileSize { get; init; } = 1024 * 1024 * 1024;
 
     [Option('e', "encoding", Required = false, HelpText = "Set file encoding")]
-    public string EncodingString { get; init; } = new UTF8Encoding(true).BodyName;
+    public string? EncodingString { get; init; } = null;
 
-    public Encoding Encoding => Encoding.GetEncoding(EncodingString);
+    public Encoding Encoding =>
+        !string.IsNullOrWhiteSpace(EncodingString)
+        ? Encoding.GetEncoding(EncodingString)
+        : Encoding.Default;
 
     [Option('p', "parallelism", Required = false, HelpText = "Set degree of parallelism")]
     public int DegreeOfParallelism { get; set; } = (Environment.ProcessorCount / 2) + (Environment.ProcessorCount / 4);

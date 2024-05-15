@@ -12,9 +12,12 @@ public class SortOptions
     public string OutputFilename { get; init; } = "data_sorted.txt";
 
     [Option('e', "encoding", Required = false, HelpText = "Set file encoding")]
-    public string EncodingString { get; init; } = new UTF8Encoding(true).BodyName;
+    public string? EncodingString { get; init; } = null;
 
-    public Encoding Encoding => Encoding.GetEncoding(EncodingString);
+    public Encoding Encoding =>
+        !string.IsNullOrWhiteSpace(EncodingString)
+        ? Encoding.GetEncoding(EncodingString)
+        : Encoding.Default;
 
     [Option('p', "parallelism", Required = false, HelpText = "Set degree of parallelism")]
     public int DegreeOfParallelism { get; set; } = (Environment.ProcessorCount / 2) + (Environment.ProcessorCount / 4);
@@ -23,5 +26,5 @@ public class SortOptions
     public  int FilesPerMerge { get; init; } = 5;
 
     [Option('g', "generate", Required = false, HelpText = "In case is provided - file with provided size will be generated")]
-    public long? FileSizeToGenerate { get; init; } = null; // 1024 * 1024 * 1024;
+    public long? FileSizeToGenerate { get; init; } = 1024;
 }
