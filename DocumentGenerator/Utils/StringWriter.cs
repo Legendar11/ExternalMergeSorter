@@ -12,6 +12,7 @@ public class StringWriter : IStringWriter
         {
             buffer[position] = '0';
             position++;
+            return;
         }
 
         if (number < 0)
@@ -19,7 +20,7 @@ public class StringWriter : IStringWriter
             buffer[position] = '-';
             position++;
             startPosition++;
-            number = Math.Abs(number);
+            number = -number;
         }
 
         var digit = 0;
@@ -27,15 +28,16 @@ public class StringWriter : IStringWriter
         {
             digit = number % 10;
 
-            if (position == startPosition && digit == 0)
-            {
-                digit = random.Next(1, 10);
-            }
-
             buffer[position] = numbers[digit];
             position++;
 
             number /= 10;
+        }
+
+        for (var i = 0; i < ((position - startPosition) / 2); i++)
+        {
+            (buffer[startPosition + i], buffer[position - i - 1])
+                = (buffer[position - i - 1], buffer[startPosition + i]);
         }
     }
 

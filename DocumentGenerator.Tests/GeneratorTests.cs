@@ -74,6 +74,41 @@ public class GeneratorTests
     }
 
     [TestMethod]
+    [DataRow(1024 * 1024, "utf-8")]
+    [DataRow(1024 * 1024, "utf-16")]
+    [DataRow(1024 * 1024, "ascii")]
+    public async Task GeneratedNumber_Are_Correct(long fileSize, string encoding)
+    {
+        var filename = GenerateFilename();
+        await generator.GenerateAsync(new GenerateOptions
+        {
+            FileSize = fileSize,
+            EncodingString = encoding,
+            OutputFilename = filename
+        });
+
+        using var sr = new StreamReader(filename);
+        while (!sr.EndOfStream)
+        {
+            var line = sr.ReadLine();
+
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                Assert.Fail("Input string is empty");
+            }
+
+            if (line[0] == '0')
+            {
+                Assert.Fail("Number cannot start from zero");
+            }
+            else if (line[0] == '-' && line[1] == '0')
+            {
+                Assert.Fail("Negative number cannot start from zero");
+            }
+        }
+    }
+
+    [TestMethod]
     [DataRow(1024)]
     [DataRow(1024 * 2)]
     [DataRow(1024 * 1024)]
