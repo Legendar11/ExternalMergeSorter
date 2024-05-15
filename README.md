@@ -25,13 +25,13 @@ Provided program have several levels for configuraion:
 - `generate (g)` - specify in case you need to generate file with provided filesize before sorting
 
 ## Rapidly fast
-We are committed to efficiency paradigms hence we know when, how and we should choose different data types and algorithms
+We are committed to efficiency paradigms hence we know when, how and we should choose different data types and algorithms:
 - Document generator uses direct access to generated file, no intermidiate writers/buffers
-- Document sorter also uses direct access for input file reading and splitting, three different sort algorithms are used: external merge sort for large input file management, quick sort for chunk files sorting, insertion sort for chunk files merging 
+- Three different sort algorithms are used: external merge sort for large input file management, quick sort for chunk files sorting, insertion sort for chunk files merging 
 
 
 ## Perfect memory utilization
-One of the most important characteristics for large file generation & sorting - used RAM due execution. That's why we did our best to reduce memory consumption
+One of the most important characteristics for large file generation & sorting - used RAM due execution. That's why we did our best to reduce memory consumption:
 - Document generator uses buffered string to be sure to create no additional allocation, resources for memory are allocated only once on program startup
 - Document sorter uses only readed string from file chunk memory and reserves data for hash dictionary, there is no unexpected memory spikes due sorting
 
