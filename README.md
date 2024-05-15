@@ -37,7 +37,7 @@ One of the most important characteristics for large file generation & sorting - 
 
 ## Low-level approach
 We do care how bytes are organized, how they are allocated and how they should be manipulated. By that reason we use only robust and effective algorithms:
-- Document senerator separate output file by independent areas for most effecient way to use parallelism
+- Document generator separate output file by independent areas for most effecient way to use parallelism
 - Document sorter compares strings by char symbols, we don't produce extra string allocation by sorting 
 
 ## Benchmark & Tests supports
