@@ -12,7 +12,7 @@ public class GenerateOptions
     public long FileSize { get; init; } = 1024 * 1024 * 1024;
 
     [Option('e', "encoding", Required = false, HelpText = "Set file encoding")]
-    public string EncodingString { get; init; } = Encoding.UTF8.BodyName;
+    public string EncodingString { get; init; } = new UTF8Encoding(true).BodyName;
 
     public Encoding Encoding => Encoding.GetEncoding(EncodingString);
 

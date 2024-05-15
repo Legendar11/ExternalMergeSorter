@@ -12,7 +12,7 @@ public class SortOptions
     public string OutputFilename { get; init; } = "data_sorted.txt";
 
     [Option('e', "encoding", Required = false, HelpText = "Set file encoding")]
-    public string EncodingString { get; init; } = Encoding.UTF8.BodyName;
+    public string EncodingString { get; init; } = new UTF8Encoding(true).BodyName;
 
     public Encoding Encoding => Encoding.GetEncoding(EncodingString);
 
@@ -23,5 +23,5 @@ public class SortOptions
     public  int FilesPerMerge { get; init; } = 5;
 
     [Option('g', "generate", Required = false, HelpText = "In case is provided - file with provided size will be generated")]
-    public long? FileSizeToGenerate { get; init; } = null; //1024 * 1024 * 1024;
+    public long? FileSizeToGenerate { get; init; } = null; // 1024 * 1024 * 1024;
 }
